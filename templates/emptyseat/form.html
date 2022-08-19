@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head> </head>
+  <body>
+    <form
+      action="../setup_schedule/"
+      accept-charset="utf-8"
+      name="schedule_emptyseat_ticketing"
+      method="post"
+    >
+      {% csrf_token %}
+      <fieldset>
+        날짜(230913) : <input type="'text" , name="date" required /><br /><br />
+        열차번호 : <input type="text" , name="train_number" required /><br />
+        승차역 : <input type="text" , name="depart_station" required /><br />
+        하차역 : <input type="text" , name="dest_station" required /><br />
+        <input type="submit" value="제출" />
+      </fieldset>
+    </form>
+  </body>
+</html>

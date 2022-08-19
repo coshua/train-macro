@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+  <head> </head>
+  <body>
+    <table name="current_state">
+      <thead>
+        <tr>
+          <th>호차</th>
+          <th>좌석</th>
+          <th>승차권</th>
+          <th>날짜</th>
+          <th>열차번호</th>
+          <th>승차역</th>
+          <th>하차역</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if pending_ticket_list %} {% for ticketinfo in pending_ticket_list %}
+        <tr>
+          {% for col in ticketinfo %}
+          <td>{{col}}</td>
+          {% endfor %}
+        </tr>
+        {% endfor %} {% else %}
+        <p>No pending ticket found</p>
+        {% endif %}
+      </tbody>
+    </table>
+    <p>History of</p>
+    <p>{{log_timestamp}}</p>
+    <p>Current</p>
+    <p>{{current_timestamp}}</p>
+  </body>
+</html>
