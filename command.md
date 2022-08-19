@@ -19,3 +19,9 @@ view recent logs
 # heroku config:set 변수=값
 
 # heroku config:get 변수
+
+### django
+
+# runserver
+
+python manage.py runserver
