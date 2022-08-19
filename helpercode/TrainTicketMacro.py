@@ -14,7 +14,7 @@ url = 'http://dtis.mil.kr/internet/dtis_rail/index.public.jsp'
 id = "21-76066504"
 password = "rhdehdwns!"
 options = webdriver.ChromeOptions()
-# options.add_argument('headless')
+options.add_argument('headless')
 options.page_load_strategy = 'normal'
 
 if os.environ.get("GOOGLE_CHROME_BIN"):
