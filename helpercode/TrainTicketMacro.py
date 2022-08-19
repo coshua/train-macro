@@ -4,11 +4,11 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.keys import Keys
 # from selenium.webdriver.chrome.options import Options
-from Scheduler import Scheduler
 import time
+from helpercode.Scheduler import Scheduler
 import datetime
 import os
-
+sch = Scheduler()
 path = None
 url = 'http://dtis.mil.kr/internet/dtis_rail/index.public.jsp'
 id = "21-76066504"
