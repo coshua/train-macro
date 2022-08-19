@@ -26,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-y)%2&qxzl%s4!)u-5hk)6)ewg8dh=jhsqky$1bm*zo+c35&y8s'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["https://train-macro.herokuapp.com", 'localhost', '127.0.0.1']
 
