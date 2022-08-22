@@ -8,13 +8,12 @@ import time
 from helpercode.Scheduler import Scheduler
 import datetime
 import os
-sch = Scheduler()
 path = None
 url = 'http://dtis.mil.kr/internet/dtis_rail/index.public.jsp'
 id = "21-76066504"
 password = "rhdehdwns!"
 options = webdriver.ChromeOptions()
-options.add_argument('headless')
+# options.add_argument('headless')
 options.page_load_strategy = 'normal'
 
 if os.environ.get("GOOGLE_CHROME_BIN"):
@@ -47,7 +46,9 @@ class Ticketing():
         except:
             # already logined
             pass
-        
+    
+    def hello(self, job_id, cnt):
+        print("hello")
     def openRequestWindow(self):
         # wait(self.driver, 5).until(lambda d: d.find_element(By.ID, "menu_btn_001")).click()
         # wait(self.driver, 5).until(lambda d: d.find_element(By.ID, "chk_bx1"))
@@ -170,6 +171,7 @@ class Ticketing():
     # 현재 신청 ,확정된 승차권 정보 ../static/tickets.txt 에 저장.
     # 첫줄 시간정보, 이후 한줄씩 티켓 정보
     def writeTicketInfo(self):
+        print("Writing ticket info on /static/tickets.txt")
         try:
             ticket_list = self.displayTicketStatus()
             filename = os.path.join(os.path.dirname(__file__), os.pardir, 'static', 'tickets.txt')
@@ -179,6 +181,7 @@ class Ticketing():
                 f.write('\n')
                 f.writelines('|'.join(ticket))
             f.close()
+            print("Finished updating current ticket result")
         except Exception as e:
             print("Error on func writeTicketInfo")
             print(e)
