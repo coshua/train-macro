@@ -48,7 +48,6 @@ class Scheduler:
         print("%s Scheduler process_id[%s] : %d" % (type, job_id, time.localtime().tm_sec))
 
     def scheduler(self, type, job_id, cnt):
-        print(self.sched.get_jobs())
         self.cnt = 0
         print("{type} Scheduler Start".format(type=type))
         if type == 'interval':
@@ -58,24 +57,30 @@ class Scheduler:
                                                  hour='0-23', second='0-59',
                                                  id=job_id, args=(type, job_id))
     
-    def setup_scheduler(self, func, type, job_id, cnt):
+    def setup_ticketing(self, func, args, job_id):
+        print(f"Setting up job {job_id}")
+        self.jobs[job_id] = self.sched.add_job(func, seconds=15, trigger="interval", id=job_id, args=args)
+
+    def setup_scrapping(self, func, job_id):
         print(f"Setting up scheduler {job_id}")
-        self.jobs[job_id] = self.sched.add_job(func, seconds=2, trigger='interval', id=job_id)
-def setup_ticketing(job_id):
+        self.jobs[job_id] = self.sched.add_job(func, seconds=300, trigger='interval', id=job_id)
+
+def setup_ticketing(func, args, job_id):
     sched = Scheduler()
-    print(f"setup_ticketing running {id(sched)}")
-    sched.scheduler('interval', job_id, 5)
+    print(f"setup_ticketing running scheduler: {id(sched)}, job: {job_id}")
+    sched.setup_ticketing(func, args, job_id)
 
 def setup_tickets_scrapping(func, job_id):
     sched = Scheduler()
-    print(f"setup_tickets_scrapping running {id(sched)}")
-    sched.setup_scheduler(func, 'interval', job_id, 3)
-def hello(job_id, cnt):
+    print(f"setup_tickets_scrapping running scheduler: {id(sched)}, job: {job_id}")
+    sched.setup_scrapping(func, job_id)
+
+def hello():
     print("Hello")
 if __name__ == '__main__':
     # scheduler.scheduler('cron', "1")
     sc = Scheduler()
-    sc.setup_scheduler(hello, 'interval', 'hf', 5)
+    sc.setup_scheduler(hello, 'interval', 'hf')
     while True:
         pass
     # while True:

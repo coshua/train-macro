@@ -27,3 +27,22 @@ need to implement Singleton pattern
 Solution 1: Manage everything on Scheduler.py and only export set_func to other modules, no class.
 
 Handled with Solution 1, now is able to pass TrainTicketMacro func to Scheduler on app initialization.
+
+# 220823
+
+Important: exception handling, informative logs
+added comments for TrainTicketMacro functions
+
+Error:
+Scheduler ids are different
+
+Todo:
+how to remove job upon specific return value
+
+# 220825
+
+parsing python list to js list for setting up reservation with a button click.
+
+Todo:
+how to remove job upon specific return value; from event listener?
+button submit form for reservation

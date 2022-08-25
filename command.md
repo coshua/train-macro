@@ -22,6 +22,6 @@ view recent logs
 
 ### django
 
-# runserver
+# python manage.py runserver
 
-python manage.py runserver
+runserver

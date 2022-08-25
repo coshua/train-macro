@@ -18,8 +18,15 @@
         {% if pending_ticket_list %} {% for ticketinfo in pending_ticket_list %}
         <tr>
           {% for col in ticketinfo %}
+          <script></script>
           <td>{{col}}</td>
-          {% endfor %}
+          {% endfor %} {% csrf_token %}
+          <button
+            type="button"
+            onclick="setup_reservation(`{{ticketinfo|safe}}`)"
+          >
+            예약
+          </button>
         </tr>
         {% endfor %} {% else %}
         <p>No pending ticket found</p>
@@ -32,3 +39,59 @@
     <p>{{current_timestamp}}</p>
   </body>
 </html>
+
+<script>
+  function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      var cookies = document.cookie.split(";");
+      for (var i = 0; i < cookies.length; i++) {
+        var cookie = cookies[i].trim();
+        // Does this cookie string begin with the name we want?
+        if (cookie.substring(0, name.length + 1) === name + "=") {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+  var csrftoken = getCookie("csrftoken");
+  function setup_reservation(ticketinfo) {
+    var form = document.createElement("form");
+    form.action = "emptyseat/setup_schedule/";
+    form.method = "post";
+    const col = [
+      "",
+      "",
+      "",
+      "date",
+      "numofTrain",
+      "departStation",
+      "destStation",
+    ];
+    console.log(typeof ticketinfo);
+    console.log(ticketinfo.split(","));
+    var lst = ticketinfo.split(",");
+    console.log(typeof lst[0]);
+    for (var i = 0; i < lst.length; i++) {
+      console.log(lst[i].match(/\'(.*?)\'/g)[0]);
+      console.log(typeof lst[i].match(/\'(.*?)\'/g)[0]);
+    }
+    console.log(typeof lst);
+    for (var i = 3; i < ticketinfo.length; i++) {
+      inp = document.createElement("input");
+      inp.setAttribute("type", "hidden");
+      inp.setAttribute("name", col[i]);
+      inp.setAttribute("value", ticketinfo[i]);
+      console.log(ticketinfo[i]);
+      form.appendChild(inp);
+    }
+    csrf = document.createElement("input");
+    csrf.setAttribute("name", "csrfmiddlewaretoken");
+    csrf.setAttribute("value", csrftoken);
+    form.appendChild(csrf);
+    document.body.appendChild(form);
+    form.submit();
+  }
+</script>

@@ -15,4 +15,5 @@ def setup_schedule(request):
     print(request.POST)
     for i in request.POST:
         print(request.POST[i])
-    return HttpResponseRedirect(reverse('emptyseat:index'))
+    return HttpResponseRedirect(reverse('home:init'))
+    #return HttpResponseRedirect(reverse('emptyseat:index'))

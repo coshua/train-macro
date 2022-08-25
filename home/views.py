@@ -8,9 +8,10 @@ from helpercode.TrainTicketMacro import Ticketing
 from helpercode.Scheduler import setup_ticketing
 import os
 import datetime
+id = "21-76066504"
+password = "rhdehdwns!"
 
 def init(request):
-    setup_ticketing('home')
     f = open(os.path.join(os.path.dirname(__file__), os.pardir, 'static', 'tickets.txt'), encoding='UTF-8')
     pending_ticket_list = []
     while True:
@@ -31,7 +32,9 @@ def init(request):
 # ../static/tickets.txt 의 티켓정보 불러와서 테이블에 보여준다
 # 해당 파일의 수정은 Ticketing.writeTicketInfo 에서
 def state(request):
-    setup_ticketing('state')
+    app = Ticketing(id, password)
+    app.login()
+    setup_ticketing(app.findSeatRecursively, ("2022-08-25", "#025", "서울", "부산"), "reserve macro")
     f = open(os.path.join(os.path.dirname(__file__), os.pardir, 'static', 'tickets.txt'), encoding='UTF-8')
     pending_ticket_list = []
     while True:

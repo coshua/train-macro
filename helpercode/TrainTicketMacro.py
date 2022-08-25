@@ -1,11 +1,10 @@
-from selenium.webdriver.support.ui import WebDriverWait as wait
 from selenium import webdriver
-from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait as wait
 from selenium.webdriver.support.select import Select
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-# from selenium.webdriver.chrome.options import Options
-import time
 from helpercode.Scheduler import Scheduler
+import time
 import datetime
 import os
 path = None
@@ -16,6 +15,7 @@ options = webdriver.ChromeOptions()
 # options.add_argument('headless')
 options.page_load_strategy = 'normal'
 
+# configure chromedriver depends on environment
 if os.environ.get("GOOGLE_CHROME_BIN"):
     options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
     options.add_argument("--no-sandbox")
@@ -37,18 +37,19 @@ class Ticketing():
 
     def login(self): 
         try:
+            print("@login - Trying login to system")
             category_element = wait(self.driver, 2).until(lambda d: d.find_element(By.ID, "military"))
             category_dropdown = Select(category_element)
             category_dropdown.select_by_index(2)
 
             self.driver.find_element(By.ID, "sId").send_keys(self.id)
             self.driver.find_element(By.ID, "sPw").send_keys(self.password + Keys.ENTER)
+            print("@login - ID and password entered")
         except:
             # already logined
+            print("@login - Already logged in to the system")
             pass
     
-    def hello(self, job_id, cnt):
-        print("hello")
     def openRequestWindow(self):
         # wait(self.driver, 5).until(lambda d: d.find_element(By.ID, "menu_btn_001")).click()
         # wait(self.driver, 5).until(lambda d: d.find_element(By.ID, "chk_bx1"))
@@ -63,13 +64,18 @@ class Ticketing():
         # self.driver.execute_script("document.getElementById('btnApply').style.visibility = 'visible';")
         # self.driver.find_element(By.ID, "request").click()
         self.driver.get("http://dtis.mil.kr/internet/dtis_rail/WSCWWMLPTEmbrktnAppMgtTF.public.jsp")
+        print("@openRequestWindow - Trying open a reservation page")
     
+    # Set specific dates on request window getting from #openRequestWindow
+    # @params 'dateFrom' and 'dateTo' formatted as '2023-01-01'
     def searchforDates(self, dateFrom, dateTo):
+        print("@searchforDates - Waiting date picker being displayed")
         self.start_time = time.time()
         wait(self.driver, 5).until(lambda d: d.find_element(By.ID, "toDt"))
         self.driver.execute_script(f'document.getElementById("fromDt").value = "{dateFrom}";')
         self.driver.execute_script(f'document.getElementById("toDt").value = "{dateTo}";')
         self.driver.execute_script("srch();")
+        print("@searchforDates - Run search")
     
     # 기차 목록에서 신청하려는 기차를 찾고 해당 기차의 예약 페이지를 연다
     # return -1 오류가 있다면
@@ -77,6 +83,7 @@ class Ticketing():
     # return 1 이미 배정받은 좌석이 있다면
     def searchforTrain(self, numofTrain):
         try:
+            print("@searchforTrain - Looking for train")
             wait(self.driver, 5).until(lambda d: d.find_element(By.CSS_SELECTOR, ("table#request_table > tbody > tr > td > input[name='main_lst_trainnam']")))
             train_list = self.driver.find_elements(By.CSS_SELECTOR, ("table#request_table > tbody > tr > td > input[name='main_lst_trainnam']"))
             matching_train_idx = 0
@@ -85,12 +92,13 @@ class Ticketing():
                     matching_train_idx = i + 1
                     break
             if not matching_train_idx:
-                print(f"There is no train {numofTrain}")
+                print(f"@searchforTrain - There is no train {numofTrain}")
                 return -1  
             else:
                 isAssigned = wait(self.driver, 5).until(lambda d: d.find_element(By.CSS_SELECTOR, (f"table#request_table > tbody > tr:nth-child({matching_train_idx}) > td:nth-child(2) > a")))
                 if isAssigned.get_attribute("innerText") == "배정완료":
                     print("이미 배정받은 좌석이 있습니다")
+                    print("@searchforTrain - You already have the ticket you looked for")
                     return 1
                 request_button = wait(self.driver, 3).until(lambda d: d.find_element(By.CSS_SELECTOR, (f"table#request_table > tbody > tr:nth-child({matching_train_idx}) > td:nth-child(3) > a")))
                 request_button.click()
@@ -102,13 +110,18 @@ class Ticketing():
                 # matching_train_list[0].click()
                 
                 self.driver.find_element(By.ID, "close_btn").click()
+                print("@searchforTrain - Train was found and the reservation page was opened")
                 return 0
         except Exception as e:
+            print("\n!!!Error on @searchforTrain!!!")
             print(e)
 
+    # When leftover seats are open, find available seat for your trip
+    # supposed to be executed after seats open
     # return True if reservation succeeded
     def searchforSeatandConfirm(self, departStation, destStation):
         try:
+            print(f"@searchforSeatandConfirm - Try to finding a seat for a trip from {departStation} to {destStation}")
             click_condition = []
             # for converting station to int, so find out available interval
             stations_idx = {}
@@ -121,6 +134,7 @@ class Ticketing():
                 time.sleep(0.1)
             for i in range(1, len(click_condition)):
                 stations_idx[click_condition[i].get_attribute("innerText")] = i
+                # 창원중앙역이 list dropdown 에서 창중으로 뜬다 에러 없도록 보정
                 if click_condition[i].get_attribute("innerText") == "창중":
                     stations_idx["창원중앙"] = i   
             seat_list = self.driver.find_elements(By.CSS_SELECTOR, (f"table#popup_table_01 > tbody:nth-child(2) > tr"))
@@ -131,6 +145,8 @@ class Ticketing():
                     # seat_list[i].click()
 
                     # dropdown 에서 원하는 승하차역으로 변경
+                    # if dropdown is not rendered when setInfo() is called, it leaves the form empty
+                    # so entering information manually to prevent error
                     depart_dropdown_element = self.driver.find_element(By.ID, ("rmndr_sstation"))
                     depart_dropdown = Select(depart_dropdown_element)
                     depart_dropdown.select_by_index(stations_idx[departStation])
@@ -144,12 +160,22 @@ class Ticketing():
                     # 알림창: 신청하시겠습니까?
                     alert = self.driver.switch_to.alert
                     alert.accept()
+
+                    try:
+                        time.sleep(1)
+                        alert = self.driver.switch_to.alert
+                        alert.accept()
+                    except:
+                        print("@searchforSeatandConfirm - No final alert appeared")
+                    print(f"@searchforSeatandConfirm - Found a seat for a trip {departStation} to {destStation} and made a reservation")
                     break
                     # alert = self.driver.switch_to.alert
             if not reserved:
                 print("예약 가능한 좌석이 없습니다.")
+                print(f"@searchforSeatandConfirm - There is no available seat for a trip {departStation} to {destStation}")
             return reserved
         except Exception as e:
+            print("\n!!!Error on @searchforSeatandConfirm!!!")
             print(e)
     
     # 현재 신청, 확정된 승차권 정보 반환
@@ -171,7 +197,7 @@ class Ticketing():
     # 현재 신청 ,확정된 승차권 정보 ../static/tickets.txt 에 저장.
     # 첫줄 시간정보, 이후 한줄씩 티켓 정보
     def writeTicketInfo(self):
-        print("Writing ticket info on /static/tickets.txt")
+        print("@writeTicketInfo - Writing ticket info on /static/tickets.txt")
         try:
             ticket_list = self.displayTicketStatus()
             filename = os.path.join(os.path.dirname(__file__), os.pardir, 'static', 'tickets.txt')
@@ -181,9 +207,9 @@ class Ticketing():
                 f.write('\n')
                 f.writelines('|'.join(ticket))
             f.close()
-            print("Finished updating current ticket result")
+            print("@writeTicketInfo - Finished updating ticketing results")
         except Exception as e:
-            print("Error on func writeTicketInfo")
+            print("\n!!!Error on @writeTicketInfo!!!")
             print(e)
 
     def findSeatRecursively(self, date, numofTrain, departStation, destStation):
