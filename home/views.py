@@ -11,6 +11,9 @@ import datetime
 id = "21-76066504"
 password = "rhdehdwns!"
 
+# /
+# ../static/tickets.txt 의 티켓정보 불러와서 테이블에 보여준다
+# 해당 파일의 수정은 Ticketing.writeTicketInfo 에서
 def init(request):
     f = open(os.path.join(os.path.dirname(__file__), os.pardir, 'static', 'tickets.txt'), encoding='UTF-8')
     pending_ticket_list = []
@@ -34,7 +37,9 @@ def init(request):
 def state(request):
     app = Ticketing(id, password)
     app.login()
-    setup_ticketing(app.findSeatRecursively, ("2022-08-25", "#025", "서울", "부산"), "reserve macro")
+    date = "2022-08-30"
+    train = "#028"
+    setup_ticketing(app.findSeatRecursively, (date, train, "부산", "서울"), date + train)
     f = open(os.path.join(os.path.dirname(__file__), os.pardir, 'static', 'tickets.txt'), encoding='UTF-8')
     pending_ticket_list = []
     while True:

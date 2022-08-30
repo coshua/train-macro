@@ -46,3 +46,15 @@ parsing python list to js list for setting up reservation with a button click.
 Todo:
 how to remove job upon specific return value; from event listener?
 button submit form for reservation
+
+# 220829
+
+Added event listener so Scheduler can remove job if it succeeded its goal
+Todo: reservation confirmation alert is not dismissed properly
+Find alternative trip if not possible to find a ticket for entire trip
+@searchforTrain, @searchforSeatandConfirm
+
+# 220830
+
+Applied python docstring for annotation
+Todo: find alternative trip

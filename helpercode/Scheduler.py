@@ -1,7 +1,9 @@
 from apscheduler.jobstores.base import JobLookupError
 from apscheduler.schedulers.background import BackgroundScheduler
 import time
+from datetime import datetime
 from collections import defaultdict
+from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
 
 class Scheduler:
     _instance = None
@@ -10,6 +12,7 @@ class Scheduler:
     def __init__(self):
         self.cnt = 0
         self.sched = BackgroundScheduler()
+        self.sched.add_listener(self.listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
         self.sched.start()
         self.job_id = ''
 
@@ -39,6 +42,8 @@ class Scheduler:
         print(f'Job id {job_id} is running {self.d[job_id]} times')
         if self.d[job_id] == cnt:
             self.kill_scheduler(job_id)
+            return True
+        return False
     
     def setup_ticketing(self, func, exe_time, job_id):
         self.sched.add_job(func, "cron", 
@@ -59,11 +64,18 @@ class Scheduler:
     
     def setup_ticketing(self, func, args, job_id):
         print(f"Setting up job {job_id}")
-        self.jobs[job_id] = self.sched.add_job(func, seconds=15, trigger="interval", id=job_id, args=args)
+        
+        self.jobs[job_id] = self.sched.add_job(func, seconds=60, trigger="interval", id=job_id, args=args)
 
     def setup_scrapping(self, func, job_id):
         print(f"Setting up scheduler {job_id}")
-        self.jobs[job_id] = self.sched.add_job(func, seconds=300, trigger='interval', id=job_id)
+        self.jobs[job_id] = self.sched.add_job(func, seconds=300, trigger='interval', id=job_id, next_run_time=datetime.now())
+
+    def listener(self, event):
+        if not event.exception:
+            print("Event has occurred", event.job_id, event.retval)
+            if event.retval:
+                self.kill_scheduler(event.job_id)
 
 def setup_ticketing(func, args, job_id):
     sched = Scheduler()
@@ -75,12 +87,20 @@ def setup_tickets_scrapping(func, job_id):
     print(f"setup_tickets_scrapping running scheduler: {id(sched)}, job: {job_id}")
     sched.setup_scrapping(func, job_id)
 
-def hello():
-    print("Hello")
+cnt = 0
+a = "Hello func"
+def hello(word):
+    print("Hello", word)
+    global cnt
+    cnt += 1
+    if cnt == 3:
+        return True
+b = "world"
 if __name__ == '__main__':
     # scheduler.scheduler('cron', "1")
     sc = Scheduler()
-    sc.setup_scheduler(hello, 'interval', 'hf')
+    sc.sched.add_listener(sc.listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
+    sc.setup_ticketing(hello, (b), a)
     while True:
         pass
     # while True:

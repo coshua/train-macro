@@ -116,30 +116,51 @@ class Ticketing():
             print("\n!!!Error on @searchforTrain!!!")
             print(e)
 
-    # When leftover seats are open, find available seat for your trip
-    # supposed to be executed after seats open
-    # return True if reservation succeeded
-    def searchforSeatandConfirm(self, departStation, destStation):
+    def searchforSeatandConfirm(self, departStation, destStation, partial=True):
+        """
+        When leftover seats are open to be reserved, find available seat. It is supposed to be executed after seats open.
+        
+        Args:
+            deparatStation (string): The name of station user departs from (동대구).
+            destStation (string): The name of station user heads to (서울).
+            partial (bool, optional): True if it is okay to confirm a seat which travels partially.
+        
+        Returns:
+            reserved (string): containing station names getting on and off (동대구-서울).
+            Return empty string if fails to make a reservation.
+        """
         try:
             print(f"@searchforSeatandConfirm - Try to finding a seat for a trip from {departStation} to {destStation}")
             click_condition = []
             # for converting station to int, so find out available interval
             stations_idx = {}
             # store longest trip available within your depart and destination
-            # in case there is no trip getting on and off at exact station
-            longest_available_inverval = [100, -1]
-            reserved = False
+            # in case there is no trip getting on and off at exact station user has specified
+            longest_available_inverval = [-1, -1]
+            reserved = ""
             while len(click_condition) < 2:
                 click_condition = self.driver.find_elements(By.CSS_SELECTOR, ("select#rmndr_sstation > option"))
                 time.sleep(0.1)
+            
+            # parsing station list of this train
             for i in range(1, len(click_condition)):
                 stations_idx[click_condition[i].get_attribute("innerText")] = i
                 # 창원중앙역이 list dropdown 에서 창중으로 뜬다 에러 없도록 보정
                 if click_condition[i].get_attribute("innerText") == "창중":
                     stations_idx["창원중앙"] = i   
+            
+            # parsing all seats and find appropriate one
             seat_list = self.driver.find_elements(By.CSS_SELECTOR, (f"table#popup_table_01 > tbody:nth-child(2) > tr"))
             for i in range(len(seat_list)):
                 seat_info = seat_list[i].get_attribute("innerText").split()
+
+                # 전체 구간 티켓 없을때 가장 긴 일부 구간 찾기
+                if stations_idx[seat_info[3][:-1]] > stations_idx[departStation]:
+                    interval = [max(stations_idx[departStation], stations_idx[seat_info[2][:-1]]), min(stations_idx[destStation], stations_idx[seat_info[3][:-1]])]
+                    if interval[1] - interval[0] > longest_available_inverval[1] - longest_available_inverval[0]:
+                        longest_available_inverval = interval
+
+                # departStation 에서 승차, destStation 하차하는 자리 있다면 예매
                 if stations_idx[seat_info[2][:-1]] <= stations_idx[departStation] and stations_idx[seat_info[3][:-1]] >= stations_idx[destStation]:
                     self.driver.execute_script(f"setInfo({i})")
                     # seat_list[i].click()
@@ -156,20 +177,20 @@ class Ticketing():
 
                     self.driver.execute_script("rmndrSeatRsvtn();")
                     self.end_time = time.time()
-                    reserved = True
+                    reserved = f"{departStation}-{destStation}"
                     # 알림창: 신청하시겠습니까?
                     alert = self.driver.switch_to.alert
                     alert.accept()
 
+                    self.openRequestWindow()
                     try:
                         time.sleep(1)
                         alert = self.driver.switch_to.alert
                         alert.accept()
                     except:
                         print("@searchforSeatandConfirm - No final alert appeared")
-                    print(f"@searchforSeatandConfirm - Found a seat for a trip {departStation} to {destStation} and made a reservation")
+                    print(f"@searchforSeatandConfirm - Found a seat for a trip {departStation} to {destStation} and made a reservation at", datetime.datetime.now())
                     break
-                    # alert = self.driver.switch_to.alert
             if not reserved:
                 print("예약 가능한 좌석이 없습니다.")
                 print(f"@searchforSeatandConfirm - There is no available seat for a trip {departStation} to {destStation}")
@@ -210,7 +231,9 @@ class Ticketing():
             print("@writeTicketInfo - Finished updating ticketing results")
         except Exception as e:
             print("\n!!!Error on @writeTicketInfo!!!")
-            print(e)
+            self.driver.get(url)
+            self.login()
+            print("@writeTicketInfo - Try login")
 
     def findSeatRecursively(self, date, numofTrain, departStation, destStation):
         self.openRequestWindow()

@@ -12,6 +12,7 @@
           <th>열차번호</th>
           <th>승차역</th>
           <th>하차역</th>
+          <th>자리찾기</th>
         </tr>
       </thead>
       <tbody>
@@ -21,12 +22,14 @@
           <script></script>
           <td>{{col}}</td>
           {% endfor %} {% csrf_token %}
-          <button
-            type="button"
-            onclick="setup_reservation(`{{ticketinfo|safe}}`)"
-          >
-            예약
-          </button>
+          <td>
+            <button
+              type="button"
+              onclick="setup_reservation(`{{ticketinfo|safe}}`)"
+            >
+              예약
+            </button>
+          </td>
         </tr>
         {% endfor %} {% else %}
         <p>No pending ticket found</p>
@@ -70,21 +73,16 @@
       "departStation",
       "destStation",
     ];
-    console.log(typeof ticketinfo);
-    console.log(ticketinfo.split(","));
     var lst = ticketinfo.split(",");
-    console.log(typeof lst[0]);
-    for (var i = 0; i < lst.length; i++) {
-      console.log(lst[i].match(/\'(.*?)\'/g)[0]);
-      console.log(typeof lst[i].match(/\'(.*?)\'/g)[0]);
-    }
-    console.log(typeof lst);
-    for (var i = 3; i < ticketinfo.length; i++) {
+    for (var i = 3; i < lst.length; i++) {
       inp = document.createElement("input");
       inp.setAttribute("type", "hidden");
       inp.setAttribute("name", col[i]);
-      inp.setAttribute("value", ticketinfo[i]);
-      console.log(ticketinfo[i]);
+      console.log(lst[i].match(/\'(.*?)\'/g)[0].replace(/'/g, ""));
+      inp.setAttribute(
+        "value",
+        lst[i].match(/\'(.*?)\'/g)[0].replace(/'/g, "")
+      );
       form.appendChild(inp);
     }
     csrf = document.createElement("input");
