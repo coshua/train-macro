@@ -17,6 +17,7 @@ options.page_load_strategy = 'eager' ~ 7.7s
 ## 추가구현
 
 현재표, 취소표, 스케쥴러 셋업되어있는 표 확인 기능
+timestamp
 에러, 성공 로그
 기능별 성능 로그
 GUI pyqt5

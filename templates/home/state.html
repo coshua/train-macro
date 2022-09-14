@@ -12,6 +12,7 @@
           <th>열차번호</th>
           <th>승차역</th>
           <th>하차역</th>
+          <th>군번</th>
           <th>자리찾기</th>
         </tr>
       </thead>
@@ -59,7 +60,9 @@
     }
     return cookieValue;
   }
+
   var csrftoken = getCookie("csrftoken");
+
   function setup_reservation(ticketinfo) {
     var form = document.createElement("form");
     form.action = "emptyseat/setup_schedule/";

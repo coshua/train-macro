@@ -58,3 +58,12 @@ Find alternative trip if not possible to find a ticket for entire trip
 
 Applied python docstring for annotation
 Todo: find alternative trip
+
+# 220901
+
+Fixing annotation
+@searchforTrain return value purpose changed
+Bulding a cancel function
+
+Todo: find alternative trip
+Build a cancel button

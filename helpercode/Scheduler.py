@@ -12,7 +12,7 @@ class Scheduler:
     def __init__(self):
         self.cnt = 0
         self.sched = BackgroundScheduler()
-        self.sched.add_listener(self.listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
+        # self.sched.add_listener(self.listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
         self.sched.start()
         self.job_id = ''
 
@@ -45,10 +45,7 @@ class Scheduler:
             return True
         return False
     
-    def setup_ticketing(self, func, exe_time, job_id):
-        self.sched.add_job(func, "cron", 
-        month=exe_time["month"], hour='11', minute="8-11", id=job_id)
-    
+
     def hello(self, type, job_id):
         print("%s Scheduler process_id[%s] : %d" % (type, job_id, time.localtime().tm_sec))
 
@@ -64,8 +61,7 @@ class Scheduler:
     
     def setup_ticketing(self, func, args, job_id):
         print(f"Setting up job {job_id}")
-        
-        self.jobs[job_id] = self.sched.add_job(func, seconds=60, trigger="interval", id=job_id, args=args)
+        self.jobs[job_id] = self.sched.add_job(func, seconds=15, trigger="interval", id=job_id, args=args)
 
     def setup_scrapping(self, func, job_id):
         print(f"Setting up scheduler {job_id}")

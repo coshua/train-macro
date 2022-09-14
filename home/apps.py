@@ -15,6 +15,7 @@ class HomeConfig(AppConfig):
         if not os.environ.get('HOME'):
             os.environ['HOME'] = 'True'
             print('Home ready')
-            app = Ticketing(id, password)
-            app.login()
+            app = Ticketing()
+            app.login(id, password)
+            app.login("22-76013374", "gangn10!")
             setup_tickets_scrapping(app.writeTicketInfo, "update")

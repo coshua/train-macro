@@ -25,3 +25,14 @@ view recent logs
 # python manage.py runserver
 
 runserver
+
+### VM
+
+# access VM
+
+ssh -i C:\Users\bitle\.ssh\ssh-key-macro.key ubuntu@129.154.51.199
+password: elwpdl
+
+# switch to root
+
+su - root

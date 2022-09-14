@@ -1,7 +1,11 @@
 from django.test import TestCase
-import datetime
+from datetime import datetime, timedelta
 
-d = "i"
-o = "oo"
 # Create your tests here.
-print(f"@searchforSeatandConfirm - Found a seat for a trip {d} to {o} and made a reservation at", datetime.datetime.now())
+
+now = datetime.now()
+future_15days = now + timedelta(days = 15)
+
+#print(f"Hi, {future_15days.strftime('%Y-%m-%d')}")#\
+
+print("hi {now}")
