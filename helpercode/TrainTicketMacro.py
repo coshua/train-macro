@@ -24,7 +24,7 @@ if os.environ.get("GOOGLE_CHROME_BIN"):
     path = os.environ.get("CHROMEDRIVER_PATH")
 else:
     path = r'C:\Users\bitle\Downloads\chromedriver_win32\chromedriver.exe'
-
+    path = os.path.abspath(os.path.join(os.getcwd(), 'chromedriver.exe'))
 class Ticketing():
     start_time, end_time = 0, 0
     passwords = None

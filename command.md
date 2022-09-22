@@ -46,3 +46,8 @@ alias macro='cd /usr/local/share/train-macro'
 cd /usr/local/share
 source macroproject/local/bin/activate
 deactivate
+
+### git
+
+token
+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
