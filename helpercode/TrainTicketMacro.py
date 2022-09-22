@@ -7,6 +7,7 @@ import time
 from datetime import datetime, timedelta
 import os
 from Scheduler import Scheduler
+from selenium.webdriver.support import expected_conditions as EC
 
 path = None
 url = 'http://dtis.mil.kr/internet/dtis_rail/index.public.jsp'
@@ -40,7 +41,7 @@ class Ticketing():
         self.passwords = {}
         return
 
-    def login(self, id, password):
+    def login(self, driver_name, id, password):
         """
         Open ticketing site - dtis.mil.kr than login with given id and password.
         Each login is managed by different chrome driver
@@ -53,22 +54,22 @@ class Ticketing():
             None
         """ 
         print("@login - Trying open up ticketing page")
-        if id not in self.drivers:
-            self.drivers[id] = webdriver.Chrome(executable_path=path, chrome_options=options)
-            self.passwords[id] = password
-        self.drivers[id].get(url)
-        while self.drivers[id].title == "":
+        if driver_name not in self.drivers:
+            self.drivers[driver_name] = webdriver.Chrome(executable_path=path, chrome_options=options)
+            self.passwords[driver_name] = password
+        self.drivers[driver_name].get(url)
+        while self.drivers[driver_name].title == "":
             time.sleep(0.1)
-            self.drivers[id].get(url)
+            self.drivers[driver_name].get(url)
         print("@login - Ticketing page was successfully rendered")
         try:
             print(f"@login - Trying login to system for user {id}")
-            category_element = wait(self.drivers[id], 2).until(lambda d: d.find_element(By.ID, "military"))
+            category_element = wait(self.drivers[driver_name], 2).until(lambda d: d.find_element(By.ID, "military"))
             category_dropdown = Select(category_element)
             category_dropdown.select_by_index(2)
 
-            self.drivers[id].find_element(By.ID, "sId").send_keys(id)
-            self.drivers[id].find_element(By.ID, "sPw").send_keys(password + Keys.ENTER)
+            self.drivers[driver_name].find_element(By.ID, "sId").send_keys(id)
+            self.drivers[driver_name].find_element(By.ID, "sPw").send_keys(password + Keys.ENTER)
             print(f"@login - ID and password was put and submitted {id}")
         except:
             # already logined
@@ -128,7 +129,7 @@ class Ticketing():
         """
         numofTicket = -1
         try:
-            print(f"@searchforTrain - Looking for train {numofTrain}, id: {id}")
+            print(f"@searchforTrain '{id}' - Looking for train {numofTrain}")
             wait(self.drivers[id], 5).until(lambda d: d.find_element(By.CSS_SELECTOR, ("table#request_table > tbody > tr > td > input[name='main_lst_trainnam']")))
             train_list = self.drivers[id].find_elements(By.CSS_SELECTOR, ("table#request_table > tbody > tr > td > input[name='main_lst_trainnam']"))
             matching_train_idx = 0
@@ -137,27 +138,28 @@ class Ticketing():
                     matching_train_idx = i + 1
                     break
             if not matching_train_idx:
-                print(f"@searchforTrain - There is no train {numofTrain}, id: {id}")
+                print(f"@searchforTrain '{id}' - There is no train {numofTrain}")
                 return numofTicket
 
             isAssigned = wait(self.drivers[id], 5).until(lambda d: d.find_element(By.CSS_SELECTOR, (f"table#request_table > tbody > tr:nth-child({matching_train_idx}) > td:nth-child(3) > a")))
             if isAssigned.get_attribute("innerText") == "2회배정":
-                print(f"@searchforTrain - Train was found, but not able to get ticket as you hold two tickets for {numofTrain}, id: {id}")
+                print(f"@searchforTrain '{id}' - Train was found, but not able to get ticket as you hold two tickets for {numofTrain}")
                 numofTicket = 2
                 return numofTicket
             elif isAssigned.get_attribute("innerText") == "2회잔여석":
-                print(f"@searchforTrain - Train was found, but you already have a ticket for the train {numofTrain}")
+                print(f"@searchforTrain '{id}' - Train was found, but you already have a ticket for the train {numofTrain}")
                 numofTicket = 1
             else:
-                print(f"@searchforTrain - Train was found {numofTrain}")
+                print(f"@searchforTrain '{id}' - Train was found {numofTrain}")
                 numofTicket = 0
             request_button = wait(self.drivers[id], 3).until(lambda d: d.find_element(By.CSS_SELECTOR, (f"table#request_table > tbody > tr:nth-child({matching_train_idx}) > td:nth-child(3) > a")))
             request_button.click()         
-            self.drivers[id].find_element(By.ID, "close_btn").click()
-            print(f"@searchforTrain - A reservation page was opened for {numofTrain}, id: {id}")
+            if numofTicket == 0:
+                self.drivers[id].find_element(By.ID, "close_btn").click()
+            print(f"@searchforTrain '{id}' - A reservation page was opened for {numofTrain}, id: {id}")
             return numofTicket
         except Exception as e:
-            print("\n!!!Error on @searchforTrain!!!")
+            print(f"\n!!!Error on @searchforTrain!!! '{id}'")
             print(e)
             return -1
 
@@ -176,7 +178,7 @@ class Ticketing():
             Return empty string if fails to make a reservation.
         """
         try:
-            print(f"@searchforSeatandConfirm - Try to finding a seat for a trip from {departStation} to {destStation}, id: {id}")
+            print(f"@searchforSeatandConfirm '{id}' - Try to finding a seat for a trip from {departStation} to {destStation}")
             click_condition = []
             # for converting station to int, so find out available interval
             stations_idx = {}
@@ -228,22 +230,26 @@ class Ticketing():
                     alert = self.drivers[id].switch_to.alert
                     alert.accept()
 
-                    self.openRequestWindow()
+                    self.openRequestWindow(id)
                     try:
                         time.sleep(1)
                         alert = self.drivers[id].switch_to.alert
                         alert.accept()
                     except:
-                        print("@searchforSeatandConfirm - No final alert appeared")
-                    print(f"@searchforSeatandConfirm - Found a seat for a trip {departStation} to {destStation} and made a reservation at", datetime.now(), f"id: {id}")
+                        print(f"@searchforSeatandConfirm '{id}' - No final alert appeared")
+                    print(f"@searchforSeatandConfirm '{id}' - Found a seat for a trip {departStation} to {destStation} and made a reservation at", datetime.now())
                     break
             if not reserved:
                 print("예약 가능한 좌석이 없습니다.")
-                self.drivers[id].find_element(By.ID, "close_btn").click()
-                print(f"@searchforSeatandConfirm - There is no available seat for a trip {departStation} to {destStation}")
+                # time.sleep(2)
+                # self.drivers[id].execute_script("downPopup();")
+                # time.sleep(2)
+                print(f"@searchforSeatandConfirm '{id}' - There is no available seat for a trip {departStation} to {destStation}")
             return reserved
         except Exception as e:
             print("\n!!!Error on @searchforSeatandConfirm!!!")
+            self.openRequestWindow(id)
+            self.searchforDates("2022-09-23", "2022-09-23", id)
             print(e)
     
     # fix
@@ -329,7 +335,8 @@ class Ticketing():
                 self.login(each_id, self.passwords[each_id])
 
     def findSeatRecursively(self, date, numofTrain, departStation, destStation, id):
-        
+        self.openRequestWindow(id)
+        self.searchforDates(date, date, id)
         isAssigned = self.searchforTrain(numofTrain, id)
         print(isAssigned)
         if isAssigned == 0:
@@ -337,6 +344,15 @@ class Ticketing():
         elif isAssigned == 1:
             self.searchforSeatandConfirm(departStation, destStation, id, False)
         return isAssigned
+
+    def addDriver(self, name):
+        self.drivers[name] = webdriver.Chrome(executable_path=path, chrome_options=options)
+        self.passwords[name] = name
+        self.drivers[name].get(url)
+        while self.drivers[name].title == "":
+            time.sleep(0.1)
+            self.drivers[name].get(url)
+        print("@addDriver - Ticketing page was successfully rendered")
 
 dateFrom, dateTo = "2022-08-17", "2022-08-17"
 def process():
@@ -357,12 +373,11 @@ def process():
     app.driver.quit()
 if __name__ == "__main__":
     app = Ticketing()
-    app.login("22-76013374", "gangn10!")
+    app.login("22-76013374", "22-76013374", "gangn10!")
     sc = Scheduler()
-    app.openRequestWindow("22-76013374")
-    app.searchforDates("2022-09-23", "2022-09-23", "22-76013374")
+    app.login("snd", "22-76013374", "gangn10!")
     sc.setup_ticketing(app.findSeatRecursively, ("2022-09-23", "#126", "동대구", "서울", "22-76013374"), "18:45 macro")
-    
+    sc.setup_ticketing(app.findSeatRecursively, ("2022-09-23", "#058", "동대구", "서울", "snd"), "19:45 macro")
     while True:
         pass
     # app.openRequestWindow()

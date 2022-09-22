@@ -61,7 +61,7 @@ class Scheduler:
     
     def setup_ticketing(self, func, args, job_id):
         print(f"Setting up job {job_id}")
-        self.jobs[job_id] = self.sched.add_job(func, seconds=15, trigger="interval", id=job_id, args=args)
+        self.jobs[job_id] = self.sched.add_job(func, seconds=60, trigger="interval", id=job_id, args=args, next_run_time=datetime.now())
 
     def setup_scrapping(self, func, job_id):
         print(f"Setting up scheduler {job_id}")
