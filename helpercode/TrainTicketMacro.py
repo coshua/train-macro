@@ -6,7 +6,7 @@ from selenium.webdriver.common.keys import Keys
 import time
 from datetime import datetime, timedelta
 import os
-from helpercode.Scheduler import Scheduler
+from Scheduler import Scheduler
 
 path = None
 url = 'http://dtis.mil.kr/internet/dtis_rail/index.public.jsp'
@@ -155,7 +155,7 @@ class Ticketing():
             request_button.click()         
             self.drivers[id].find_element(By.ID, "close_btn").click()
             print(f"@searchforTrain - A reservation page was opened for {numofTrain}, id: {id}")
-            return numofTrain
+            return numofTicket
         except Exception as e:
             print("\n!!!Error on @searchforTrain!!!")
             print(e)
@@ -239,6 +239,7 @@ class Ticketing():
                     break
             if not reserved:
                 print("예약 가능한 좌석이 없습니다.")
+                self.drivers[id].find_element(By.ID, "close_btn").click()
                 print(f"@searchforSeatandConfirm - There is no available seat for a trip {departStation} to {destStation}")
             return reserved
         except Exception as e:
@@ -324,11 +325,13 @@ class Ticketing():
             # self.driver.get(url)
             # self.login()
             print("@writeTicketInfo - Try login")
+            for each_id in self.drivers:
+                self.login(each_id, self.passwords[each_id])
 
     def findSeatRecursively(self, date, numofTrain, departStation, destStation, id):
-        self.openRequestWindow(id)
-        self.searchforDates(date, date, id)
+        
         isAssigned = self.searchforTrain(numofTrain, id)
+        print(isAssigned)
         if isAssigned == 0:
             self.searchforSeatandConfirm(departStation, destStation, id)
         elif isAssigned == 1:
@@ -356,7 +359,10 @@ if __name__ == "__main__":
     app = Ticketing()
     app.login("22-76013374", "gangn10!")
     sc = Scheduler()
-    sc.setup_ticketing(app.findSeatRecursively, ("2022-09-03", "#028", "동대구", "서울", "22-76013374"), "saturday macro")
+    app.openRequestWindow("22-76013374")
+    app.searchforDates("2022-09-23", "2022-09-23", "22-76013374")
+    sc.setup_ticketing(app.findSeatRecursively, ("2022-09-23", "#126", "동대구", "서울", "22-76013374"), "18:45 macro")
+    
     while True:
         pass
     # app.openRequestWindow()
