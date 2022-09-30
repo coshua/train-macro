@@ -67,3 +67,18 @@ Bulding a cancel function
 
 Todo: find alternative trip
 Build a cancel button
+
+# 220922
+
+Ran Macro on Ubuntu from cloud
+Got a ticket from it
+
+# 220929
+
+Setting up Naver cloud messaging with FCM and Android Studio
+
+# 220930
+
+Setting up SMS messaging for notification instead of FCM
+Test trial succeeded
+Needs: Pull update from linux and run on different configuration

@@ -12,7 +12,7 @@ class Scheduler:
     def __init__(self):
         self.cnt = 0
         self.sched = BackgroundScheduler()
-        # self.sched.add_listener(self.listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
+        self.sched.add_listener(self.listener_foundSeat, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
         self.sched.start()
         self.job_id = ''
 
@@ -32,71 +32,46 @@ class Scheduler:
             # self.sched.remove_job(job_id)
             self.jobs[job_id].remove()
             self.jobs[job_id] = None
-            print(f'scheduler {job_id} has been removed')
+            print(f'@kill_scheduler - scheduler {job_id} has been removed')
         except JobLookupError as err:
             print("fail to stop Scheduler: {err}".format(err=err))
             return
 
-    def kill_on_condition(self, job_id, cnt):
-        self.d[job_id] += 1
-        print(f'Job id {job_id} is running {self.d[job_id]} times')
-        if self.d[job_id] == cnt:
-            self.kill_scheduler(job_id)
-            return True
-        return False
-    
-
-    def hello(self, type, job_id):
-        print("%s Scheduler process_id[%s] : %d" % (type, job_id, time.localtime().tm_sec))
-
-    def scheduler(self, type, job_id, cnt):
-        self.cnt = 0
-        print("{type} Scheduler Start".format(type=type))
-        if type == 'interval':
-            self.jobs[job_id] = self.sched.add_job(self.kill_on_condition, type, seconds=2, id=job_id, args=(job_id, cnt))
-        elif type == 'cron':
-            self.sched.add_job(self.hello, type, day_of_week='mon-fri',
-                                                 hour='0-23', second='0-59',
-                                                 id=job_id, args=(type, job_id))
-    
-    def setup_ticketing(self, func, args, job_id):
-        print(f"Setting up job {job_id}")
-        self.jobs[job_id] = self.sched.add_job(func, seconds=60, trigger="interval", id=job_id, args=args, next_run_time=datetime.now())
+    def setup_ticketing(self, func, args, seconds, next_run_time, job_id):
+        print(f"@Scheduler:setup_ticketing - Job '{job_id}' is added to the scheduler")
+        self.jobs[job_id] = self.sched.add_job(func, seconds=seconds, trigger="interval", id=job_id, args=args, next_run_time=next_run_time)
 
     def setup_scrapping(self, func, job_id):
         print(f"Setting up scheduler {job_id}")
         self.jobs[job_id] = self.sched.add_job(func, seconds=300, trigger='interval', id=job_id, next_run_time=datetime.now())
 
-    def listener(self, event):
-        if not event.exception:
-            print("Event has occurred", event.job_id, event.retval)
-            if event.retval:
-                self.kill_scheduler(event.job_id)
+    def listener_foundSeat(self, event):
+        """
+        It listens recursive scheduler events and it stops the task 'setup_ticketing' when given function (Ticketing().findSeatRecursively in this case)
+        returns 2 (means user has two tickets for the same train)
 
-def setup_ticketing(func, args, job_id):
-    sched = Scheduler()
-    print(f"setup_ticketing running scheduler: {id(sched)}, job: {job_id}")
-    sched.setup_ticketing(func, args, job_id)
+        Returns:
+            numofTicket (int): 
+            Return -1 if something went wrong while trying to find the train.
+            Return 0 if it finds the train and opens a page for it.
+            Return 1 if it finds the train and opens a page for it, but notices there is a ticket for that train.
+            Return 2 if it finds the train, but notices two tickets so it is not able to reserve more seats.
+        """
+        if not event.exception:
+            print(f"@listener_foundSeat - listens to event on '{event.job_id}', return value is {event.retval}")
+            if event.retval == 2:
+                print(f"@listener_foundSeat - ends the task '{event.job_id}' as reservation request was made successfully")
+                self.kill_scheduler(event.job_id)
 
 def setup_tickets_scrapping(func, job_id):
     sched = Scheduler()
     print(f"setup_tickets_scrapping running scheduler: {id(sched)}, job: {job_id}")
     sched.setup_scrapping(func, job_id)
 
-cnt = 0
-a = "Hello func"
-def hello(word):
-    print("Hello", word)
-    global cnt
-    cnt += 1
-    if cnt == 3:
-        return True
-b = "world"
 if __name__ == '__main__':
     # scheduler.scheduler('cron', "1")
     sc = Scheduler()
     sc.sched.add_listener(sc.listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
-    sc.setup_ticketing(hello, (b), a)
     while True:
         pass
     # while True:

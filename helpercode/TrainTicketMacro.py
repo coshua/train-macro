@@ -7,7 +7,7 @@ import time
 from datetime import datetime, timedelta
 import os
 from Scheduler import Scheduler
-from selenium.webdriver.support import expected_conditions as EC
+from Notification import Notification
 
 path = None
 url = 'http://dtis.mil.kr/internet/dtis_rail/index.public.jsp'
@@ -24,11 +24,15 @@ if os.environ.get("GOOGLE_CHROME_BIN"):
     path = os.environ.get("CHROMEDRIVER_PATH")
 else:
     path = r'C:\Users\bitle\Downloads\chromedriver_win32\chromedriver.exe'
-    path = os.path.abspath(os.path.join(os.getcwd(), 'chromedriver.exe'))
+    print(os.getcwd())
+    # from linux
+    # path = os.path.abspath(os.path.join(os.getcwd(), os.pardir, 'chromedriver'))
+
 class Ticketing():
     start_time, end_time = 0, 0
     passwords = None
     drivers = None
+    notifier = None
     def __init__(self):
         # self.driver = webdriver.Chrome(executable_path=path, chrome_options=options)
         # self.driver.get(url)
@@ -39,6 +43,7 @@ class Ticketing():
         # self.driver.maximize_window()
         self.drivers = {}
         self.passwords = {}
+        self.notifier = Notification()
         return
 
     def login(self, driver_name, id, password):
@@ -90,7 +95,7 @@ class Ticketing():
         # self.driver.execute_script("document.getElementById('btnApply').style.visibility = 'visible';")
         # self.driver.find_element(By.ID, "request").click()
         self.drivers[id].get("http://dtis.mil.kr/internet/dtis_rail/WSCWWMLPTEmbrktnAppMgtTF.public.jsp")
-        print(f"@openRequestWindow - Trying open a reservation page, id: {id}")
+        print(f"@openRequestWindow '{id}'- Trying open a reservation page")
     
     def searchforDates(self, dateFrom, dateTo, id):
         """
@@ -109,7 +114,7 @@ class Ticketing():
         self.drivers[id].execute_script(f'document.getElementById("fromDt").value = "{dateFrom}";')
         self.drivers[id].execute_script(f'document.getElementById("toDt").value = "{dateTo}";')
         self.drivers[id].execute_script("srch();")
-        print(f"@searchforDates - Run search id: {id}")
+        print(f"@searchforDates '{id}' - Set date {dateFrom} and run search")
 
     def searchforTrain(self, numofTrain, id):
         """
@@ -141,7 +146,7 @@ class Ticketing():
                 print(f"@searchforTrain '{id}' - There is no train {numofTrain}")
                 return numofTicket
 
-            isAssigned = wait(self.drivers[id], 5).until(lambda d: d.find_element(By.CSS_SELECTOR, (f"table#request_table > tbody > tr:nth-child({matching_train_idx}) > td:nth-child(3) > a")))
+            isAssigned = wait(self.drivers[id], 5).until(lambda d: d.find_element(By.CSS_SELECTOR, (f"table#request_table > tbody > tr:nth-child({matching_train_idx}) > td:nth-child(3)")))
             if isAssigned.get_attribute("innerText") == "2회배정":
                 print(f"@searchforTrain '{id}' - Train was found, but not able to get ticket as you hold two tickets for {numofTrain}")
                 numofTicket = 2
@@ -178,7 +183,7 @@ class Ticketing():
             Return empty string if fails to make a reservation.
         """
         try:
-            print(f"@searchforSeatandConfirm '{id}' - Try to finding a seat for a trip from {departStation} to {destStation}")
+            print(f"@searchforSeatandConfirm '{id}' - Try to finding a seat for a trip from {departStation} to {destStation}", datetime.now().strftime('%H:%M:%S'))
             click_condition = []
             # for converting station to int, so find out available interval
             stations_idx = {}
@@ -196,7 +201,8 @@ class Ticketing():
                 # 창원중앙역이 list dropdown 에서 창중으로 뜬다 에러 없도록 보정
                 if click_condition[i].get_attribute("innerText") == "창중":
                     stations_idx["창원중앙"] = i   
-            
+                if click_condition[i].get_attribute("innerText") == "송정리":
+                    stations_idx["광주송정"] = i   
             # parsing all seats and find appropriate one
             seat_list = self.drivers[id].find_elements(By.CSS_SELECTOR, (f"table#popup_table_01 > tbody:nth-child(2) > tr"))
             for i in range(len(seat_list)):
@@ -240,7 +246,6 @@ class Ticketing():
                     print(f"@searchforSeatandConfirm '{id}' - Found a seat for a trip {departStation} to {destStation} and made a reservation at", datetime.now())
                     break
             if not reserved:
-                print("예약 가능한 좌석이 없습니다.")
                 # time.sleep(2)
                 # self.drivers[id].execute_script("downPopup();")
                 # time.sleep(2)
@@ -338,57 +343,25 @@ class Ticketing():
         self.openRequestWindow(id)
         self.searchforDates(date, date, id)
         isAssigned = self.searchforTrain(numofTrain, id)
-        print(isAssigned)
+        result = ""
         if isAssigned == 0:
-            self.searchforSeatandConfirm(departStation, destStation, id)
+            result = self.searchforSeatandConfirm(departStation, destStation, id)
         elif isAssigned == 1:
-            self.searchforSeatandConfirm(departStation, destStation, id, False)
+            result = self.searchforSeatandConfirm(departStation, destStation, id, False)
+        
+        if result:
+            message = f"잔여석 예약 확정 정보\n{date[5:]}, {numofTrain}\n{result}\n{id}"
+            messaging_response = self.notifier.send_sms("01084456318", message)
+            print(f"@findSeatRecursively - {messaging_response}")
         return isAssigned
 
-    def addDriver(self, name):
-        self.drivers[name] = webdriver.Chrome(executable_path=path, chrome_options=options)
-        self.passwords[name] = name
-        self.drivers[name].get(url)
-        while self.drivers[name].title == "":
-            time.sleep(0.1)
-            self.drivers[name].get(url)
-        print("@addDriver - Ticketing page was successfully rendered")
 
-dateFrom, dateTo = "2022-08-17", "2022-08-17"
-def process():
-    print("Ticketing running")
-    app = Ticketing()
-    app.login(id, password)
-    app.openRequestWindow()
-    app.searchforDates(dateFrom, dateTo)
-    isSeatOpen = app.searchforTrain("#127")
-    #잔여석 열리는 시간보다 일찍 들어갔을때 재시도
-    while not isSeatOpen:
-        print("해당 열차는 현재 잔여석 예약이 불가능합니다.")
-        app.searchforDates(dateFrom, dateTo)
-        isSeatOpen = app.searchforTrain("#127")
-    app.searchforSeatandConfirm("서울", "수원")
-    print("Ticketing finished")
-    print("Time passed ", app.end_time - app.start_time)
-    app.driver.quit()
 if __name__ == "__main__":
     app = Ticketing()
     app.login("22-76013374", "22-76013374", "gangn10!")
     sc = Scheduler()
-    app.login("snd", "22-76013374", "gangn10!")
-    sc.setup_ticketing(app.findSeatRecursively, ("2022-09-23", "#126", "동대구", "서울", "22-76013374"), "18:45 macro")
-    sc.setup_ticketing(app.findSeatRecursively, ("2022-09-23", "#058", "동대구", "서울", "snd"), "19:45 macro")
+    #app.login("snd", "22-76013374", "gangn10!")
+    sc.setup_ticketing(app.findSeatRecursively, ("2022-10-01", "#025", "서울", "광명", "22-76013374"), 60, datetime.now(), "test messaging macro")
+    #sc.setup_ticketing(app.findSeatRecursively, ("2022-09-23", "#058", "동대구", "서울", "snd"), "19:45 macro")
     while True:
         pass
-    # app.openRequestWindow()
-    # app.searchforDates(dateFrom, dateTo)
-    # isSeatOpen = app.searchforTrain("#127")
-    # #잔여석 열리는 시간보다 일찍 들어갔을때 재시도
-    # while not isSeatOpen:
-    #     print("해당 열차는 현재 잔여석 예약이 불가능합니다.")
-    #     app.searchforDates(dateFrom, dateTo)
-    #     isSeatOpen = app.searchforTrain("#127")
-    # app.searchforSeatandConfirm("서울", "수원")
-    # print("Time passed ", app.end_time - app.start_time)
-    # while True:
-    #     pass
