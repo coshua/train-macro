@@ -1,6 +1,7 @@
 from apscheduler.jobstores.base import JobLookupError
 from apscheduler.schedulers.background import BackgroundScheduler
 import time
+import pytz
 from datetime import datetime
 from collections import defaultdict
 from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
@@ -11,7 +12,7 @@ class Scheduler:
     jobs = {}
     def __init__(self):
         self.cnt = 0
-        self.sched = BackgroundScheduler()
+        self.sched = BackgroundScheduler(timezone=pytz.timezone('Asia/Seoul'))
         self.sched.add_listener(self.listener_foundSeat, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
         self.sched.start()
         self.job_id = ''
@@ -36,6 +37,11 @@ class Scheduler:
         except JobLookupError as err:
             print("fail to stop Scheduler: {err}".format(err=err))
             return
+    
+    def setup_login(self, func, args, run_date, job_id):
+        print(f"@Scheduler:setup_login - Job '{job_id}' is added to the scheduler")
+        print(f"@Scheduler:setup_login - It will be executed at {run_date}, current time is {datetime.now()}")
+        self.jobs[job_id] = self.sched.add_job(func, 'date', run_date=run_date, args=args, id=job_id)
 
     def setup_ticketing(self, func, args, seconds, next_run_time, job_id):
         print(f"@Scheduler:setup_ticketing - Job '{job_id}' is added to the scheduler")

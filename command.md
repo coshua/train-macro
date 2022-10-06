@@ -38,20 +38,24 @@ password: elwpdl
 # switch to root
 
 su - root
+vi ~/.bashrc
 
 alias macro='cd /usr/local/share/train-macro'
 
 # virtualenv
 
-alias actenv='source /usr/local/share/macroproject/local/bin/activate'
-cd /usr/local/share
-source macroproject/local/bin/activate
+alias envtmo='source /usr/local/share/macroproject/local/bin/activate'
+alias envmovie='source /usr/local/share/movie/local/bin/activate'
+
 deactivate
 
 ### git
 
 token
 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
+
+git log --oneline
+git revert 12741e5
 
 ### tmux
 

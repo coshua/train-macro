@@ -3,6 +3,7 @@ from selenium.webdriver.support.ui import WebDriverWait as wait
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import UnexpectedAlertPresentException
 import time
 from datetime import datetime, timedelta
 import os
@@ -26,6 +27,9 @@ else:
     path = r'C:\Users\bitle\Downloads\chromedriver_win32\chromedriver.exe'
     print(os.getcwd())
     # from linux
+    # options.add_argument('headless')
+    # options.add_argument("--no-sandbox")
+    # path = '/usr/local/share/chromedriver'
     # path = os.path.abspath(os.path.join(os.getcwd(), os.pardir, 'chromedriver'))
 
 class Ticketing():
@@ -42,6 +46,7 @@ class Ticketing():
         #     self.driver.get(url)
         # self.driver.maximize_window()
         self.drivers = {}
+        self.ids = {}
         self.passwords = {}
         self.notifier = Notification()
         return
@@ -61,6 +66,7 @@ class Ticketing():
         print("@login - Trying open up ticketing page")
         if driver_name not in self.drivers:
             self.drivers[driver_name] = webdriver.Chrome(executable_path=path, chrome_options=options)
+            self.ids[driver_name] = id
             self.passwords[driver_name] = password
         self.drivers[driver_name].get(url)
         while self.drivers[driver_name].title == "":
@@ -340,7 +346,12 @@ class Ticketing():
                 self.login(each_id, self.passwords[each_id])
 
     def findSeatRecursively(self, date, numofTrain, departStation, destStation, id):
-        self.openRequestWindow(id)
+        try:
+            self.openRequestWindow(id)
+        except UnexpectedAlertPresentException as e:
+            print("@findSeatRecursively - login session expired, retry login")
+            self.login(id, self.ids[id], self.passwords[id])
+
         self.searchforDates(date, date, id)
         isAssigned = self.searchforTrain(numofTrain, id)
         result = ""
@@ -358,10 +369,13 @@ class Ticketing():
 
 if __name__ == "__main__":
     app = Ticketing()
-    app.login("22-76013374", "22-76013374", "gangn10!")
+    #app.login("22-76013374", "22-76013374", "gangn10!")
     sc = Scheduler()
     #app.login("snd", "22-76013374", "gangn10!")
-    sc.setup_ticketing(app.findSeatRecursively, ("2022-10-01", "#025", "서울", "광명", "22-76013374"), 60, datetime.now(), "test messaging macro")
+    next_run_time = datetime(2022, 10, 6, 14, 1)
+    login_time = next_run_time - timedelta(minutes = 2)
+    sc.setup_login(app.login, ("dj", "22-76013374", "gangn10!"), login_time, "login before macro")
+    sc.setup_ticketing(app.findSeatRecursively, ("2022-10-08", "#028", "광명", "서울", "dj"), 60, next_run_time, "test macro")
     #sc.setup_ticketing(app.findSeatRecursively, ("2022-09-23", "#058", "동대구", "서울", "snd"), "19:45 macro")
     while True:
         pass
