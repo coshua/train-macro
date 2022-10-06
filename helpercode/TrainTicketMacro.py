@@ -348,24 +348,22 @@ class Ticketing():
     def findSeatRecursively(self, date, numofTrain, departStation, destStation, id):
         try:
             self.openRequestWindow(id)
+            self.searchforDates(date, date, id)
+            isAssigned = self.searchforTrain(numofTrain, id)
+            result = ""
+            if isAssigned == 0:
+                result = self.searchforSeatandConfirm(departStation, destStation, id)
+            elif isAssigned == 1:
+                result = self.searchforSeatandConfirm(departStation, destStation, id, False)
+            
+            if result:
+                message = f"잔여석 예약 확정 정보\n{date[5:]}, {numofTrain}\n{result}\n{id}"
+                messaging_response = self.notifier.send_sms("01084456318", message)
+                print(f"@findSeatRecursively - {messaging_response}")
+            return isAssigned
         except UnexpectedAlertPresentException as e:
             print("@findSeatRecursively - login session expired, retry login")
             self.login(id, self.ids[id], self.passwords[id])
-
-        self.searchforDates(date, date, id)
-        isAssigned = self.searchforTrain(numofTrain, id)
-        result = ""
-        if isAssigned == 0:
-            result = self.searchforSeatandConfirm(departStation, destStation, id)
-        elif isAssigned == 1:
-            result = self.searchforSeatandConfirm(departStation, destStation, id, False)
-        
-        if result:
-            message = f"잔여석 예약 확정 정보\n{date[5:]}, {numofTrain}\n{result}\n{id}"
-            messaging_response = self.notifier.send_sms("01084456318", message)
-            print(f"@findSeatRecursively - {messaging_response}")
-        return isAssigned
-
 
 if __name__ == "__main__":
     app = Ticketing()
