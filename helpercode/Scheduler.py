@@ -29,14 +29,16 @@ class Scheduler:
         self.sched.shutdown()
 
     def kill_scheduler(self, job_id):
+        res = ""
         try:
             # self.sched.remove_job(job_id)
             self.jobs[job_id].remove()
             self.jobs[job_id] = None
-            print(f'@kill_scheduler - scheduler {job_id} has been removed')
+            res = f'@kill_scheduler - scheduler {job_id} has been removed'
         except JobLookupError as err:
-            print("fail to stop Scheduler: {err}".format(err=err))
-            return
+            res = "fail to stop Scheduler: {err}".format(err=err)
+        print(res)
+        return res
     
     def setup_login(self, func, args, run_date, job_id):
         print(f"@Scheduler:setup_login - Job '{job_id}' is added to the scheduler")
@@ -44,8 +46,14 @@ class Scheduler:
         self.jobs[job_id] = self.sched.add_job(func, 'date', run_date=run_date, args=args, id=job_id)
 
     def setup_ticketing(self, func, args, seconds, next_run_time, job_id):
-        print(f"@Scheduler:setup_ticketing - Job '{job_id}' is added to the scheduler")
-        self.jobs[job_id] = self.sched.add_job(func, seconds=seconds, trigger="interval", id=job_id, args=args, next_run_time=next_run_time)
+        res = ""
+        try:
+            self.jobs[job_id] = self.sched.add_job(func, seconds=seconds, trigger="interval", id=job_id, args=args, next_run_time=next_run_time)
+            res = f"@Scheduler:setup_ticketing - Job '{job_id}' is added to the scheduler"
+        except Exception as err:
+            res = "fail to stop Scheduler: {err}".format(err=err)
+        print(res)
+        return res
 
     def setup_scrapping(self, func, job_id):
         print(f"Setting up scheduler {job_id}")

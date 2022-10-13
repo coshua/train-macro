@@ -4,16 +4,23 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import UnexpectedAlertPresentException
+from telegram import Update, Bot
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 import time
 from datetime import datetime, timedelta
-import os
+import os, sys
 from Scheduler import Scheduler
 from Notification import Notification
+sys.path.append("../macroserver")
+import config
+TELEGRAM_CHAT_ID = 5794019445
+TELEGRAM_BOT_TOKEN = config.TELEGRAM_BOT_TOKEN
 
 path = None
 url = 'http://dtis.mil.kr/internet/dtis_rail/index.public.jsp'
-id = "21-76066504"
-password = "rhdehdwns!"
+#id = "21-76066504"
+#password = "rhdehdwns!"
+
 options = webdriver.ChromeOptions()
 # options.add_argument('headless')
 options.page_load_strategy = 'normal'
@@ -24,13 +31,19 @@ if os.environ.get("GOOGLE_CHROME_BIN"):
     options.add_argument("--no-sandbox")
     path = os.environ.get("CHROMEDRIVER_PATH")
 else:
-    path = r'C:\Users\bitle\Downloads\chromedriver_win32\chromedriver.exe'
-    print(os.getcwd())
+    path = config.DRIVER_PATH
+    # print(os.getcwd())
     # from linux
     # options.add_argument('headless')
     # options.add_argument("--no-sandbox")
     # path = '/usr/local/share/chromedriver'
     # path = os.path.abspath(os.path.join(os.getcwd(), os.pardir, 'chromedriver'))
+if path == "/usr/local/share/chromedriver":
+    options.add_argument('headless')
+    options.add_argument("--no-sandbox")   
+
+# setup telegram bot
+updater = Updater(token=TELEGRAM_BOT_TOKEN, use_context=True)
 
 class Ticketing():
     start_time, end_time = 0, 0
@@ -70,6 +83,7 @@ class Ticketing():
             self.passwords[driver_name] = password
         self.drivers[driver_name].get(url)
         while self.drivers[driver_name].title == "":
+            print("@login - Page load pending, retry")
             time.sleep(0.1)
             self.drivers[driver_name].get(url)
         print("@login - Ticketing page was successfully rendered")
@@ -86,7 +100,7 @@ class Ticketing():
             # already logined
             print("@login - Already logged in to the system")
             pass
-    
+        return "@login - process has finished"
     def openRequestWindow(self, id):
         # wait(self.driver, 5).until(lambda d: d.find_element(By.ID, "menu_btn_001")).click()
         # wait(self.driver, 5).until(lambda d: d.find_element(By.ID, "chk_bx1"))
@@ -366,14 +380,17 @@ class Ticketing():
             self.login(id, self.ids[id], self.passwords[id])
 
 if __name__ == "__main__":
+    id = config.TMO_ID
+    password = config.TMO_PASSWORD
     app = Ticketing()
-    #app.login("22-76013374", "22-76013374", "gangn10!")
     sc = Scheduler()
-    #app.login("snd", "22-76013374", "gangn10!")
+    driver_name = "dj"
+    app.login(driver_name, id, password)
     next_run_time = datetime(2022, 10, 6, 14, 1)
+    next_run_time = datetime.now()
     login_time = next_run_time - timedelta(minutes = 2)
-    sc.setup_login(app.login, ("dj", "22-76013374", "gangn10!"), login_time, "login before macro")
-    sc.setup_ticketing(app.findSeatRecursively, ("2022-10-08", "#028", "광명", "서울", "dj"), 60, next_run_time, "test macro")
+    #sc.setup_login(app.login, ("dj", "22-76013374", "gangn10!"), login_time, "login before macro")
+    sc.setup_ticketing(app.findSeatRecursively, ("2022-10-14", "#058", "동대구", "서울", driver_name), 60, next_run_time, "test macro")
     #sc.setup_ticketing(app.findSeatRecursively, ("2022-09-23", "#058", "동대구", "서울", "snd"), "19:45 macro")
     while True:
         pass

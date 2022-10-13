@@ -82,3 +82,9 @@ Setting up Naver cloud messaging with FCM and Android Studio
 Setting up SMS messaging for notification instead of FCM
 Test trial succeeded
 Needs: Pull update from linux and run on different configuration
+
+# 221011
+
+탤레그램,
+kill macro by its name
+setup scheduler
