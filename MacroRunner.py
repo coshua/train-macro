@@ -3,10 +3,11 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 import time
 from datetime import datetime, timedelta
 import os, sys
-from TrainTicketMacro import Ticketing
-from Scheduler import Scheduler
-from Notification import Notification
-sys.path.append("../macroserver")
+
+# Local imports
+from helpercode.TrainTicketMacro import Ticketing
+from helpercode.Scheduler import Scheduler
+from helpercode.Notification import Notification
 import config
 
 updater = Updater(token=config.TELEGRAM_BOT_TOKEN, use_context=True)

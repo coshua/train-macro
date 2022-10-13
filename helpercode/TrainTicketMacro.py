@@ -9,9 +9,10 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 import time
 from datetime import datetime, timedelta
 import os, sys
-from Scheduler import Scheduler
-from Notification import Notification
-sys.path.append("../macroserver")
+
+# Local imports
+from helpercode.Scheduler import Scheduler
+from helpercode.Notification import Notification
 import config
 TELEGRAM_CHAT_ID = 5794019445
 TELEGRAM_BOT_TOKEN = config.TELEGRAM_BOT_TOKEN
