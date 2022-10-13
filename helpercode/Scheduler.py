@@ -40,6 +40,9 @@ class Scheduler:
         print(res)
         return res
     
+    def get_active_jobs(self):
+        return self.jobs
+        
     def setup_login(self, func, args, run_date, job_id):
         print(f"@Scheduler:setup_login - Job '{job_id}' is added to the scheduler")
         print(f"@Scheduler:setup_login - It will be executed at {run_date}, current time is {datetime.now()}")

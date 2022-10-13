@@ -102,6 +102,7 @@ class Ticketing():
             print("@login - Already logged in to the system")
             pass
         return "@login - process has finished"
+
     def openRequestWindow(self, id):
         # wait(self.driver, 5).until(lambda d: d.find_element(By.ID, "menu_btn_001")).click()
         # wait(self.driver, 5).until(lambda d: d.find_element(By.ID, "chk_bx1"))
@@ -166,8 +167,9 @@ class Ticketing():
             if not matching_train_idx:
                 print(f"@searchforTrain '{id}' - There is no train {numofTrain}")
                 return numofTicket
-
+            time.sleep(2)
             isAssigned = wait(self.drivers[id], 5).until(lambda d: d.find_element(By.CSS_SELECTOR, (f"table#request_table > tbody > tr:nth-child({matching_train_idx}) > td:nth-child(3)")))
+            print(isAssigned.get_attribute("innerText"))
             if isAssigned.get_attribute("innerText") == "2회배정":
                 print(f"@searchforTrain '{id}' - Train was found, but not able to get ticket as you hold two tickets for {numofTrain}")
                 numofTicket = 2
@@ -181,7 +183,10 @@ class Ticketing():
             request_button = wait(self.drivers[id], 3).until(lambda d: d.find_element(By.CSS_SELECTOR, (f"table#request_table > tbody > tr:nth-child({matching_train_idx}) > td:nth-child(3) > a")))
             request_button.click()         
             if numofTicket == 0:
-                self.drivers[id].find_element(By.ID, "close_btn").click()
+                try:
+                    self.drivers[id].find_element(By.ID, "close_btn").click()
+                except:
+                    print(f"@searchforTrain - cannot interact with close_btn")
             print(f"@searchforTrain '{id}' - A reservation page was opened for {numofTrain}, id: {id}")
             return numofTicket
         except Exception as e:
@@ -387,11 +392,11 @@ if __name__ == "__main__":
     sc = Scheduler()
     driver_name = "dj"
     app.login(driver_name, id, password)
+    print(app.displayTicketStatus(driver_name))
     next_run_time = datetime(2022, 10, 6, 14, 1)
     next_run_time = datetime.now()
     login_time = next_run_time - timedelta(minutes = 2)
     #sc.setup_login(app.login, ("dj", "22-76013374", "gangn10!"), login_time, "login before macro")
-    sc.setup_ticketing(app.findSeatRecursively, ("2022-10-14", "#058", "동대구", "서울", driver_name), 60, next_run_time, "test macro")
-    #sc.setup_ticketing(app.findSeatRecursively, ("2022-09-23", "#058", "동대구", "서울", "snd"), "19:45 macro")
+    #sc.setup_ticketing(app.findSeatRecursively, ("2022-10-14", "#058", "동대구", "서울", driver_name), 60, next_run_time, "test macro")
     while True:
         pass

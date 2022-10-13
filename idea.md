@@ -21,6 +21,4 @@ findSeatRecursively 에서 새로고침 안하고 더 빠르게
 
 ## 오류
 
-인터넷 안될때
-플로우 고장났을때
-서버에서 시간대 맞을지
+금요일 #58 innerText 다르게 뜨는 현상, supposed to be "2회잔여석" but always showing "잔여석"

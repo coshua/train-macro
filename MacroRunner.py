@@ -36,14 +36,23 @@ def kill_macro(update: Update, context):
     res = sc.kill_scheduler(context.args[0])
     context.bot.send_message(chat_id=update.effective_chat.id, text=res) 
 
+def get_ticketinfo(update: Update, context):
+    res = app.displayTicketStatus("dj")
+    text = "\n".join([" ".join(ticket[:-1]) for ticket in res])
+    context.bot.send_message(chat_id=update.effective_chat.id, text=text)
+
+def get_active_jobs(update: Update, context):
+    res = sc.get_active_jobs
+    context.bot.send_message(chat_id=update.effective_chat.id, text=res)
 #step4.위에서 정의한 함수를 실행할 CommandHandler 정의
 start_handler = CommandHandler('start', start) #('명령어',명령 함수)
 
 #step5.Dispatcher에 Handler를 추가
 dispatcher.add_handler(start_handler)
+dispatcher.add_handler(CommandHandler('login', login))
 dispatcher.add_handler(CommandHandler('set', set_macro))
 dispatcher.add_handler(CommandHandler('kill', kill_macro))
-dispatcher.add_handler(CommandHandler('login', login))
+dispatcher.add_handler(CommandHandler('tickets', get_ticketinfo))
 #step6.Updater 실시간 입력 모니터링 시작(polling 개념)
 
 if __name__ == "__main__":
