@@ -12,6 +12,7 @@ import config
 
 updater = Updater(token=config.TELEGRAM_BOT_TOKEN, use_context=True)
 dispatcher = updater.dispatcher
+TELEGRAM_CHAT_ID = 5794019445
 
 def hello():
     print("HELLO !")
@@ -24,11 +25,16 @@ app = Ticketing()
 sc = Scheduler()
 
 def login(update: Update, context):
-    res = app.login("dj", config.TMO_ID, config.TMO_PASSWORD)
+    driver_name = context.args[0] if context.args else "dj"
+    res = app.login(driver_name, config.TMO_ID, config.TMO_PASSWORD)
     context.bot.send_message(chat_id=update.effective_chat.id, text=res)
 
 def set_macro(update: Update, context):
     next_run_time = datetime.now()
+    two_days_before = datetime.strptime(context.args[0], "%Y-%m-%d")
+    two_days_before += timedelta(hours=12, days=-2)
+    next_run_time = two_days_before
+    print(f"next run time is {next_run_time}")
     res = sc.setup_ticketing(app.findSeatRecursively, (context.args[:5]), int(context.args[5]), next_run_time, context.args[6])
     context.bot.send_message(chat_id=update.effective_chat.id, text=res)
 
@@ -37,23 +43,30 @@ def kill_macro(update: Update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text=res) 
 
 def get_ticketinfo(update: Update, context):
-    res = app.displayTicketStatus("dj")
+    driver_name = context.args[0] if context.args else "dj"
+    res = app.displayTicketStatus(driver_name)
     text = "\n".join([" ".join(ticket[:-1]) for ticket in res])
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 def get_active_jobs(update: Update, context):
     res = sc.get_active_jobs
     context.bot.send_message(chat_id=update.effective_chat.id, text=res)
-#step4.위에서 정의한 함수를 실행할 CommandHandler 정의
-start_handler = CommandHandler('start', start) #('명령어',명령 함수)
 
-#step5.Dispatcher에 Handler를 추가
+start_handler = CommandHandler('start', start) #('명령어',명령 함수)
 dispatcher.add_handler(start_handler)
 dispatcher.add_handler(CommandHandler('login', login))
 dispatcher.add_handler(CommandHandler('set', set_macro))
 dispatcher.add_handler(CommandHandler('kill', kill_macro))
 dispatcher.add_handler(CommandHandler('tickets', get_ticketinfo))
-#step6.Updater 실시간 입력 모니터링 시작(polling 개념)
+dispatcher.add_handler(CommandHandler('tasks', get_active_jobs))
+
+class Runner:
+    def __init__(self):
+        dispatcher.bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=f"Macro Runner just has been created")
+
+    def __del__(self):
+        dispatcher.bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=f"Macro Runner just has been cleaned up")
+
 
 if __name__ == "__main__":
     id = config.TMO_ID

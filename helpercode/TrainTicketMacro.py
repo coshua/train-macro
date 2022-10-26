@@ -327,21 +327,25 @@ class Ticketing():
             print(e)
             self.login(id, self.passwords[id])
             self.drivers[id].get("http://dtis.mil.kr/internet/dtis_rail/milTrnTicktPrnt.public.jsp")
-        ticket_list = self.drivers[id].find_elements(By.CSS_SELECTOR, "table#request_table > tbody > tr")
-        ticket_info = []
-        for i in ticket_list:
-            cols = i.get_attribute("innerText").split("\t")
-            cur_ticket = []
-            # 호차, 좌석, 배정여부, 날짜, 열차번호, 승차역, 하차역
-            col_array = [1, 2, 3, 4, 5, 15, 16]
-            for i in col_array:
-                cur_ticket.append(cols[i])
-            # 군번
-            cur_ticket.append(cols[12])
-            ticket_info.append(cur_ticket)
-        ticket_info.sort(key=lambda lst: lst[3])
-        return ticket_info[:-1]
-
+        try:
+            ticket_list = self.drivers[id].find_elements(By.CSS_SELECTOR, "table#request_table > tbody > tr")
+            ticket_info = []
+            for i in ticket_list:
+                cols = i.get_attribute("innerText").split("\t")
+                cur_ticket = []
+                # 호차, 좌석, 배정여부, 날짜, 열차번호, 승차역, 하차역
+                col_array = [1, 2, 3, 4, 5, 15, 16]
+                for i in col_array:
+                    cur_ticket.append(cols[i])
+                # 군번
+                cur_ticket.append(cols[12])
+                ticket_info.append(cur_ticket)
+            ticket_info.sort(key=lambda lst: lst[3])
+            return ticket_info[:-1]
+        except Exception as e:
+            print(f"@displayTicketStatus - Error while parsing tickets, it seems you don't have any tickets - {id}")
+            print(e)
+            
     # 현재 신청 ,확정된 승차권 정보 ../static/tickets.txt 에 저장.
     # 첫줄 시간정보, 이후 한줄씩 티켓 정보
     def writeTicketInfo(self):

@@ -24,7 +24,7 @@ class Scheduler:
 
     def __del__(self):
         self.shutdown()
-
+        
     def shutdown(self):
         self.sched.shutdown()
 
@@ -41,8 +41,10 @@ class Scheduler:
         return res
     
     def get_active_jobs(self):
-        return self.jobs
-        
+        res = self.jobs.keys()
+        print(res)
+        return self.jobs.keys()
+
     def setup_login(self, func, args, run_date, job_id):
         print(f"@Scheduler:setup_login - Job '{job_id}' is added to the scheduler")
         print(f"@Scheduler:setup_login - It will be executed at {run_date}, current time is {datetime.now()}")
