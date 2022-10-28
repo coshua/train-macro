@@ -53,10 +53,20 @@ class Scheduler:
     def setup_ticketing(self, func, args, seconds, next_run_time, job_id):
         res = ""
         try:
-            self.jobs[job_id] = self.sched.add_job(func, seconds=seconds, trigger="interval", id=job_id, args=args, next_run_time=next_run_time)
+            self.jobs[job_id] = self.sched.add_job(func, seconds=seconds, trigger="interval", id=job_id, args=args, next_run_time=next_run_time, max_instances=5)
             res = f"@Scheduler:setup_ticketing - Job '{job_id}' is added to the scheduler"
         except Exception as err:
-            res = "fail to stop Scheduler: {err}".format(err=err)
+            res = "fail to setup Scheduler: {err}".format(err=err)
+        print(res)
+        return res
+
+    def search_and_find(self, func, args, run_date, job_id):
+        res = ""
+        try:
+            self.jobs[job_id] = self.sched.add_job(func, trigger='date', args=args, run_date=run_date)
+            res = f"@Scheduler:setup_ticketing - Job '{job_id}' is added to the scheduler"
+        except Exception as err:
+            res = "fail to setup Scheduler: {err}".format(err=err)
         print(res)
         return res
 

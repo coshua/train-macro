@@ -270,6 +270,9 @@ class Ticketing():
                     except:
                         print(f"@searchforSeatandConfirm '{id}' - No final alert appeared")
                     print(f"@searchforSeatandConfirm '{id}' - Found a seat for a trip {departStation} to {destStation} and made a reservation at", datetime.now())
+                    #message = f"잔여석 예약 확정 정보\n{date[5:]}, {numofTrain}\n{result}\n{id}"
+                    message = f"잔여석 예약 확정 정보\n{departStation}-{destStation}\n{id}"
+                    messaging_response = self.notifier.send_sms("01084456318", message)
                     break
             if not reserved:
                 # time.sleep(2)
@@ -280,9 +283,13 @@ class Ticketing():
         except Exception as e:
             print("\n!!!Error on @searchforSeatandConfirm!!!")
             self.openRequestWindow(id)
-            self.searchforDates("2022-09-23", "2022-09-23", id)
             print(e)
     
+    def searchforTrainThenFind(self, date, numofTrain, departStation, destStation, id):
+        self.searchforDates(date, date, id)
+        self.searchforTrain(numofTrain, id)
+        result = self.searchforSeatandConfirm(departStation, destStation, id)
+
     # fix
     # 취소표에서 구간은 처음과 끝으로 보이고 이후의 창에서 세부 구간 취소해야함
     def cancelTicket(self, operationDate, numofTrain, departStation, destStation, id):
@@ -345,7 +352,7 @@ class Ticketing():
         except Exception as e:
             print(f"@displayTicketStatus - Error while parsing tickets, it seems you don't have any tickets - {id}")
             print(e)
-            
+
     # 현재 신청 ,확정된 승차권 정보 ../static/tickets.txt 에 저장.
     # 첫줄 시간정보, 이후 한줄씩 티켓 정보
     def writeTicketInfo(self):
@@ -369,6 +376,9 @@ class Ticketing():
             for each_id in self.drivers:
                 self.login(each_id, self.passwords[each_id])
 
+    def loginAndOpenPage(self, date, numofTrain, deparatStation, destStation, id):
+        return
+
     def findSeatRecursively(self, date, numofTrain, departStation, destStation, id):
         try:
             self.openRequestWindow(id)
@@ -381,9 +391,7 @@ class Ticketing():
                 result = self.searchforSeatandConfirm(departStation, destStation, id, False)
             
             if result:
-                message = f"잔여석 예약 확정 정보\n{date[5:]}, {numofTrain}\n{result}\n{id}"
-                messaging_response = self.notifier.send_sms("01084456318", message)
-                print(f"@findSeatRecursively - {messaging_response}")
+                print(f"@findSeatRecursively - Ticket has been reserved")
             return isAssigned
         except UnexpectedAlertPresentException as e:
             print("@findSeatRecursively - login session expired, retry login")
