@@ -278,7 +278,7 @@ class Ticketing():
                 # time.sleep(2)
                 # self.drivers[id].execute_script("downPopup();")
                 # time.sleep(2)
-                print(f"@searchforSeatandConfirm '{id}' - There is no available seat for a trip {departStation} to {destStation}")
+                print(f"@searchforSeatandConfirm '{id}' - There is no available seat for a trip {departStation} to {destStation} at {datetime.now()}")
             return reserved
         except Exception as e:
             print("\n!!!Error on @searchforSeatandConfirm!!!")
