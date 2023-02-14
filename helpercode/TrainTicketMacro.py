@@ -286,9 +286,11 @@ class Ticketing():
             print(e)
     
     def searchforTrainThenFind(self, date, numofTrain, departStation, destStation, id):
+        print("@searchforTrainThenFind - One time macro is running")
         self.searchforDates(date, date, id)
         self.searchforTrain(numofTrain, id)
         result = self.searchforSeatandConfirm(departStation, destStation, id)
+        return result
 
     # fix
     # 취소표에서 구간은 처음과 끝으로 보이고 이후의 창에서 세부 구간 취소해야함
@@ -334,9 +336,9 @@ class Ticketing():
             print(e)
             self.login(id, self.passwords[id])
             self.drivers[id].get("http://dtis.mil.kr/internet/dtis_rail/milTrnTicktPrnt.public.jsp")
+        ticket_info = []
         try:
             ticket_list = self.drivers[id].find_elements(By.CSS_SELECTOR, "table#request_table > tbody > tr")
-            ticket_info = []
             for i in ticket_list:
                 cols = i.get_attribute("innerText").split("\t")
                 cur_ticket = []
@@ -348,13 +350,14 @@ class Ticketing():
                 cur_ticket.append(cols[12])
                 ticket_info.append(cur_ticket)
             ticket_info.sort(key=lambda lst: lst[3])
-            return ticket_info[:-1]
         except Exception as e:
             print(f"@displayTicketStatus - Error while parsing tickets, it seems you don't have any tickets - {id}")
             print(e)
+        return ticket_info[:-1]
 
     # 현재 신청 ,확정된 승차권 정보 ../static/tickets.txt 에 저장.
     # 첫줄 시간정보, 이후 한줄씩 티켓 정보
+    #legacy
     def writeTicketInfo(self):
         print("@writeTicketInfo - Writing ticket info on /static/tickets.txt")
         try:
@@ -396,6 +399,17 @@ class Ticketing():
         except UnexpectedAlertPresentException as e:
             print("@findSeatRecursively - login session expired, retry login")
             self.login(id, self.ids[id], self.passwords[id])
+
+    def killDrivers(self):
+        print(self.drivers)
+        for id in self.drivers:
+            try:
+                self.drivers[id].quit()
+            except:
+                pass
+        print("@killBrowsers - drivers have been cleared")
+        print(self.drivers)
+        return str(self.drivers)
 
 if __name__ == "__main__":
     id = config.TMO_ID

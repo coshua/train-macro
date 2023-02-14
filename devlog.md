@@ -88,3 +88,8 @@ Needs: Pull update from linux and run on different configuration
 탤레그램,
 kill macro by its name
 setup scheduler
+
+# 230201 update
+
+expect no error while scrapping ticket info when it is empty - ongoing
+telegram command /login does not require additional parameter

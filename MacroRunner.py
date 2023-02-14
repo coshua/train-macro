@@ -14,38 +14,28 @@ updater = Updater(token=config.TELEGRAM_BOT_TOKEN, use_context=True)
 dispatcher = updater.dispatcher
 TELEGRAM_CHAT_ID = 5794019445
 
-def hello():
-    print("HELLO !")
-
-#step3./start 명령어가 입력되었을 때의 함수 정의
-def start(update: Update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text=f"{context.args}")
-    hello()
 app = Ticketing()
 sc = Scheduler()
+
+dispatcher.bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=f"Macro Runner just has been set up")
 
 def login(update: Update, context):
     driver_name = context.args[0] if context.args else "dj"
     res = app.login(driver_name, config.TMO_ID, config.TMO_PASSWORD)
-    next_run_time = datetime.datetime.now()
-    if context.args[1]:
-        #next_run_time = datetime.datetime.combine(datetime.date.today(), datetime.time(11, 57))
-        app.openRequestWindow(driver_name)
     context.bot.send_message(chat_id=update.effective_chat.id, text=res)
 
 # supposed to receive message at 11:58
 def login_and_run(update: Update, context):
-    date, numofTrain, depart, dest, driver_name, interval, task_name = context.args
+    date, numofTrain, depart, dest, driver_name, task_name = context.args
     res = app.login(driver_name, config.TMO_ID, config.TMO_PASSWORD)
     context.bot.send_message(chat_id=update.effective_chat.id, text=res)
 
     app.openRequestWindow(driver_name)
     
-    two_days_before = datetime.datetime.strptime(context.args[0], "%Y-%m-%d")
-    two_days_before += datetime.timedelta(hours=12, days=-2)
+    execution_date = datetime.datetime.strptime(context.args[0], "%Y-%m-%d")
+    execution_date += datetime.timedelta(hours=12, days=-2)
 
-    two_days_before = datetime.datetime.now() + datetime.timedelta(seconds=20)
-    res = sc.search_and_find(app.searchforTrainThenFind, ([date, numofTrain, depart, dest, driver_name]), two_days_before, task_name)
+    res = sc.search_and_find(app.searchforTrainThenFind, ([date, numofTrain, depart, dest, driver_name]), execution_date, task_name)
     context.bot.send_message(chat_id=update.effective_chat.id, text=res)
 
 def set_macro(update: Update, context):
@@ -54,7 +44,7 @@ def set_macro(update: Update, context):
     two_days_before += datetime.timedelta(hours=12, days=-2)
     next_run_time = two_days_before
     print(f"next run time is {next_run_time}")
-    print(f"now is {datetime.datetime.now()}")
+    print(f"Current time is {datetime.datetime.now()}")
     res = sc.setup_ticketing(app.findSeatRecursively, (context.args[:5]), int(context.args[5]), next_run_time, context.args[6])
     context.bot.send_message(chat_id=update.effective_chat.id, text=res)
 
@@ -69,25 +59,20 @@ def get_ticketinfo(update: Update, context):
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 def get_active_jobs(update: Update, context):
-    res = sc.get_active_jobs
+    res = sc.get_active_jobs()
     context.bot.send_message(chat_id=update.effective_chat.id, text=res)
 
-start_handler = CommandHandler('start', start) #('명령어',명령 함수)
-dispatcher.add_handler(start_handler)
+def kill_drivers(update: Update, context):
+    res = app.killDrivers()
+    context.bot.send_message(chat_id=update.effective_chat.id, text=res)
+
 dispatcher.add_handler(CommandHandler('login', login))
 dispatcher.add_handler(CommandHandler('set', set_macro))
 dispatcher.add_handler(CommandHandler('loginrun', login_and_run))
 dispatcher.add_handler(CommandHandler('kill', kill_macro))
 dispatcher.add_handler(CommandHandler('tickets', get_ticketinfo))
 dispatcher.add_handler(CommandHandler('tasks', get_active_jobs))
-
-class Runner:
-    def __init__(self):
-        dispatcher.bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=f"Macro Runner just has been created")
-
-    def __del__(self):
-        dispatcher.bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=f"Macro Runner just has been cleaned up")
-
+dispatcher.add_handler(CommandHandler('clear', kill_drivers))
 
 if __name__ == "__main__":
     id = config.TMO_ID

@@ -24,3 +24,4 @@ findSeatRecursively 에서 새로고침 안하고 더 빠르게
 금요일 #58 innerText 다르게 뜨는 현상, supposed to be "2회잔여석" but always showing "잔여석"
 목요일 #25
 ticketing 과 인포 가져올때 간섭 문제
+티켓팅 표 없을때 오류

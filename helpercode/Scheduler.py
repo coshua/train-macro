@@ -8,7 +8,6 @@ from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
 
 class Scheduler:
     _instance = None
-    d = defaultdict(int)
     jobs = {}
     def __init__(self):
         self.cnt = 0
@@ -35,15 +34,15 @@ class Scheduler:
             self.jobs[job_id].remove()
             self.jobs[job_id] = None
             res = f'@kill_scheduler - scheduler {job_id} has been removed'
-        except JobLookupError as err:
+        except Exception as err:
             res = "fail to stop Scheduler: {err}".format(err=err)
-        print(res)
         return res
     
     def get_active_jobs(self):
-        res = self.jobs.keys()
-        print(res)
-        return self.jobs.keys()
+        # res = self.jobs.keys()
+        # print(res)
+        # return self.jobs.keys()
+        return str(self.jobs)
 
     def setup_login(self, func, args, run_date, job_id):
         print(f"@Scheduler:setup_login - Job '{job_id}' is added to the scheduler")
@@ -96,23 +95,3 @@ def setup_tickets_scrapping(func, job_id):
     sched = Scheduler()
     print(f"setup_tickets_scrapping running scheduler: {id(sched)}, job: {job_id}")
     sched.setup_scrapping(func, job_id)
-
-if __name__ == '__main__':
-    # scheduler.scheduler('cron', "1")
-    sc = Scheduler()
-    sc.sched.add_listener(sc.listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
-    while True:
-        pass
-    # while True:
-    #     '''
-    #     count 제한할 경우 아래와 같이 사용
-    #     '''
-    #     print("Running main process")
-    #     time.sleep(1)
-    #     count += 1
-    #     if count == 10:
-    #         scheduler.kill_scheduler("1")
-    #         print("Kill cron Scheduler")
-    #     elif count == 15:
-    #         scheduler.kill_scheduler("2")
-    #         print("Kill interval Scheduler")
