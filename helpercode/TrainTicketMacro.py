@@ -408,6 +408,7 @@ class Ticketing():
             except:
                 pass
         print("@killBrowsers - drivers have been cleared")
+        self.drivers.clear()
         print(self.drivers)
         return str(self.drivers)
 

@@ -38,6 +38,15 @@ class Scheduler:
             res = "fail to stop Scheduler: {err}".format(err=err)
         return res
     
+    def kill_every_scheduler(self):
+        for job in self.jobs:
+            try:
+                self.jobs[job].remove()
+            except:
+                pass
+        
+        self.jobs.clear()
+        
     def get_active_jobs(self):
         # res = self.jobs.keys()
         # print(res)

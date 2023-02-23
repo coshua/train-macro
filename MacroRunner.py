@@ -64,6 +64,7 @@ def get_active_jobs(update: Update, context):
 
 def kill_drivers(update: Update, context):
     res = app.killDrivers()
+    sc.kill_every_scheduler()
     context.bot.send_message(chat_id=update.effective_chat.id, text=res)
 
 dispatcher.add_handler(CommandHandler('login', login))

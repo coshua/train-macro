@@ -30,6 +30,12 @@ deactivate
 token
 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
 
+git push github master
+
+bash 에서
+git add .
+git pull
+
 git log --oneline
 git revert 12741e5
 
@@ -66,3 +72,16 @@ ctrl + b + [
 # 특정 세션 강제 종료
 
 tmux kill-session -t session_number
+
+### 파일 관리
+
+# display the file content
+
+cat filename
+
+# edit file content
+
+vi filename
+
+편집
+i esc :wq
