@@ -6,6 +6,7 @@
 
 ssh -i C:\Users\bitle\.ssh\ssh-key-macro.key ubuntu@129.154.51.199
 password: elwpdl
+python MacroRunner.py
 
 # reboot VM
 

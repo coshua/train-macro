@@ -78,16 +78,20 @@ class Ticketing():
             None
         """ 
         print("@login - Trying open up ticketing page")
-        if driver_name not in self.drivers:
-            self.drivers[driver_name] = webdriver.Chrome(executable_path=path, chrome_options=options)
-            self.ids[driver_name] = id
-            self.passwords[driver_name] = password
-        self.drivers[driver_name].get(url)
-        while self.drivers[driver_name].title == "":
-            print("@login - Page load pending, retry")
-            time.sleep(0.1)
+        try:
+            if driver_name not in self.drivers:
+                self.drivers[driver_name] = webdriver.Chrome(executable_path=path, chrome_options=options)
+                self.ids[driver_name] = id
+                self.passwords[driver_name] = password
             self.drivers[driver_name].get(url)
-        print("@login - Ticketing page was successfully rendered")
+            while self.drivers[driver_name].title == "":
+                print("@login - Page load pending, retry")
+                time.sleep(0.1)
+                self.drivers[driver_name].get(url)
+            print("@login - Ticketing page was successfully rendered")
+        except Exception as e:
+            print("@login - Having trouble on driver")
+            print(e)
         try:
             print(f"@login - Trying login to system for user {id}")
             category_element = wait(self.drivers[driver_name], 2).until(lambda d: d.find_element(By.ID, "military"))
