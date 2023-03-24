@@ -43,6 +43,9 @@ def set_macro(update: Update, context):
     two_days_before = datetime.datetime.strptime(context.args[0], "%Y-%m-%d")
     two_days_before += datetime.timedelta(hours=12, days=-2)
     next_run_time = two_days_before
+    cur = datetime.datetime.now()
+    if cur > next_run_time:
+        next_run_time = cur
     print(f"next run time is {next_run_time}")
     print(f"Current time is {datetime.datetime.now()}")
     res = sc.setup_ticketing(app.findSeatRecursively, (context.args[:5]), int(context.args[5]), next_run_time, context.args[6])
@@ -62,6 +65,9 @@ def get_active_jobs(update: Update, context):
     res = sc.get_active_jobs()
     context.bot.send_message(chat_id=update.effective_chat.id, text=res)
 
+def get_drivers(update: Update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text=app.drivers)
+    
 def kill_drivers(update: Update, context):
     res = app.killDrivers()
     sc.kill_every_scheduler()

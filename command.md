@@ -10,7 +10,7 @@ python MacroRunner.py
 
 # reboot VM
 
-shutdown -r
+shutdown -r now
 
 # switch to root
 
@@ -36,6 +36,9 @@ git push github master
 bash 에서
 git add .
 git pull
+
+git stash
+git stash drop
 
 git log --oneline
 git revert 12741e5
@@ -86,3 +89,8 @@ vi filename
 
 편집
 i esc :wq
+
+# download chromedriver
+
+wget https://chromedriver.storage.googleapis.com/110.0.5481.77/chromedriver_linux64.zip
+unzip chromedriver_linux64.zip
