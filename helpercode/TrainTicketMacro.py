@@ -23,25 +23,24 @@ url = 'http://dtis.mil.kr/internet/dtis_rail/index.public.jsp'
 #password = "rhdehdwns!"
 
 options = webdriver.ChromeOptions()
-# options.add_argument('headless')
 options.page_load_strategy = 'normal'
-
+options.add_argument("--no-sandbox")
 # configure chromedriver depends on environment
 if os.environ.get("GOOGLE_CHROME_BIN"):
     options.binary_location = os.environ.get("GOOGLE_CHROME_BIN")
-    options.add_argument("--no-sandbox")
     path = os.environ.get("CHROMEDRIVER_PATH")
 else:
     path = config.DRIVER_PATH
-    # print(os.getcwd())
-    # from linux
-    # options.add_argument('headless')
-    # options.add_argument("--no-sandbox")
-    # path = '/usr/local/share/chromedriver'
-    # path = os.path.abspath(os.path.join(os.getcwd(), os.pardir, 'chromedriver'))
+
 if path == "/usr/local/share/chromedriver":
-    options.add_argument('headless')
-    options.add_argument("--no-sandbox")   
+    options.add_argument('--headless')   
+    options.add_argument("--dns-prefetch-disable")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--incognito")
+    options.add_argument("--disable-setuid-sandbox")
+    options.add_argument("--single-process")
+    user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
+    options.add_argument(f'user-agent={user_agent}')
 
 # setup telegram bot
 updater = Updater(token=TELEGRAM_BOT_TOKEN, use_context=True)
@@ -52,13 +51,6 @@ class Ticketing():
     drivers = None
     notifier = None
     def __init__(self):
-        # self.driver = webdriver.Chrome(executable_path=path, chrome_options=options)
-        # self.driver.get(url)
-        # self.id, self.password = id, password
-        # while self.driver.title == "":
-        #     time.sleep(0.1)
-        #     self.driver.get(url)
-        # self.driver.maximize_window()
         self.drivers = {}
         self.ids = {}
         self.passwords = {}
@@ -81,9 +73,12 @@ class Ticketing():
         try:
             if driver_name not in self.drivers:
                 self.drivers[driver_name] = webdriver.Chrome(executable_path=path, chrome_options=options)
+                print("@login - driver has been successfully set up")
                 self.ids[driver_name] = id
                 self.passwords[driver_name] = password
+                self.drivers[driver_name].set_page_load_timeout(30)
             self.drivers[driver_name].get(url)
+            print("@login - Accessed to URL, ", self.drivers[driver_name].title)
             while self.drivers[driver_name].title == "":
                 print("@login - Page load pending, retry")
                 time.sleep(0.1)
@@ -101,25 +96,12 @@ class Ticketing():
             self.drivers[driver_name].find_element(By.ID, "sId").send_keys(id)
             self.drivers[driver_name].find_element(By.ID, "sPw").send_keys(password + Keys.ENTER)
             print(f"@login - ID and password was put and submitted {id}")
-        except:
-            # already logined
-            print("@login - Already logged in to the system")
-            pass
+        except Exception as e:
+            print(e)
+            return e
         return "@login - process has finished"
 
     def openRequestWindow(self, id):
-        # wait(self.driver, 5).until(lambda d: d.find_element(By.ID, "menu_btn_001")).click()
-        # wait(self.driver, 5).until(lambda d: d.find_element(By.ID, "chk_bx1"))
-        # for i in range(9):
-        #     self.driver.find_element(By.ID, "chk_bx" + str(i + 1)).click()
-        # wait(self.driver, 3).until(expected_conditions.alert_is_present())
-        # # unexpected error using following
-        # # wait.until(lambda d: d.expected_conditions.alert_is_present())
-        # alert = self.driver.switch_to.alert
-        # alert.accept()
-        # wait(self.driver, 3).until(lambda d: d.find_element(By.ID, ("btnApply")))
-        # self.driver.execute_script("document.getElementById('btnApply').style.visibility = 'visible';")
-        # self.driver.find_element(By.ID, "request").click()
         self.drivers[id].get("http://dtis.mil.kr/internet/dtis_rail/WSCWWMLPTEmbrktnAppMgtTF.public.jsp")
         print(f"@openRequestWindow '{id}'- Trying open a reservation page")
     
@@ -415,19 +397,3 @@ class Ticketing():
         self.drivers.clear()
         print(self.drivers)
         return str(self.drivers)
-
-if __name__ == "__main__":
-    id = config.TMO_ID
-    password = config.TMO_PASSWORD
-    app = Ticketing()
-    sc = Scheduler()
-    driver_name = "dj"
-    app.login(driver_name, id, password)
-    print(app.displayTicketStatus(driver_name))
-    next_run_time = datetime(2022, 10, 6, 14, 1)
-    next_run_time = datetime.now()
-    login_time = next_run_time - timedelta(minutes = 2)
-    #sc.setup_login(app.login, ("dj", "22-76013374", "gangn10!"), login_time, "login before macro")
-    #sc.setup_ticketing(app.findSeatRecursively, ("2022-10-14", "#058", "동대구", "서울", driver_name), 60, next_run_time, "test macro")
-    while True:
-        pass
