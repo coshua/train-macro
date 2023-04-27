@@ -58,7 +58,7 @@ def kill_macro(update: Update, context):
 def get_ticketinfo(update: Update, context):
     driver_name = context.args[0] if context.args else "dj"
     res = app.displayTicketStatus(driver_name)
-    text = "\n".join([" ".join(ticket[:-1]) for ticket in res])
+    text = "\n".join([" ".join(ticket) for ticket in res])
     context.bot.send_message(chat_id=update.effective_chat.id, text=text)
 
 def get_active_jobs(update: Update, context):

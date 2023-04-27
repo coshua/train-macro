@@ -4,6 +4,7 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import UnexpectedAlertPresentException
+from selenium.webdriver.support import expected_conditions as EC
 from telegram import Update, Bot
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 import time
@@ -11,16 +12,18 @@ from datetime import datetime, timedelta
 import os, sys
 
 # Local imports
-from helpercode.Scheduler import Scheduler
 from helpercode.Notification import Notification
+
 import config
 TELEGRAM_CHAT_ID = 5794019445
 TELEGRAM_BOT_TOKEN = config.TELEGRAM_BOT_TOKEN
 
 path = None
-url = 'http://dtis.mil.kr/internet/dtis_rail/index.public.jsp'
+url =  'https://www.dtis.mil.kr/m/mcp/mcpLogin.page'
 #id = "21-76066504"
 #password = "rhdehdwns!"
+id = '22-76013374'
+password = 'mentholco0!'
 
 options = webdriver.ChromeOptions()
 options.page_load_strategy = 'normal'
@@ -46,7 +49,6 @@ if path == "/usr/local/share/chromedriver":
 updater = Updater(token=TELEGRAM_BOT_TOKEN, use_context=True)
 
 class Ticketing():
-    start_time, end_time = 0, 0
     passwords = None
     drivers = None
     notifier = None
@@ -84,25 +86,33 @@ class Ticketing():
                 time.sleep(0.1)
                 self.drivers[driver_name].get(url)
             print("@login - Ticketing page was successfully rendered")
+            driver = self.drivers[driver_name]
         except Exception as e:
             print("@login - Having trouble on driver")
             print(e)
         try:
             print(f"@login - Trying login to system for user {id}")
-            category_element = wait(self.drivers[driver_name], 2).until(lambda d: d.find_element(By.ID, "military"))
-            category_dropdown = Select(category_element)
-            category_dropdown.select_by_index(2)
-
-            self.drivers[driver_name].find_element(By.ID, "sId").send_keys(id)
-            self.drivers[driver_name].find_element(By.ID, "sPw").send_keys(password + Keys.ENTER)
+            train = wait(driver, 5).until(lambda d: d.find_element(By.ID, "military"))
+            driver.execute_script(f'document.getElementById("military").value = 5;')
+            # category_element = wait(self.drivers[driver_name], 2).until(lambda d: d.find_element(By.ID, "military"))
+            #loginarea = wait(driver, 5).until(EC.element_to_be_clickable((By.ID, "mainframe.VFrameSet.frameLogin.form.divLogin.form.edtID:input")))
+            IDarea = driver.find_element(By.ID, "sId")
+            IDarea.send_keys(id)
+            #driver.execute_script(f'document.getElementById("mainframe.VFrameSet.frameLogin.form.divLogin.form.edtID:input").value = "{id}";')
+            PWarea = driver.find_element(By.ID, "sPw")
+            PWarea.send_keys(password + Keys.ENTER)
+            #driver.execute_script(f'document.getElementById("mainframe.VFrameSet.frameLogin.form.divLogin.form.edtPW:input").value = "{password}";')
             print(f"@login - ID and password was put and submitted {id}")
+        except UnexpectedAlertPresentException as e:
+            print("@login - Already in the system")
+            self.login(id, self.ids[id], self.passwords[id])
         except Exception as e:
             print(e)
             return e
         return "@login - process has finished"
 
     def openRequestWindow(self, id):
-        self.drivers[id].get("http://dtis.mil.kr/internet/dtis_rail/WSCWWMLPTEmbrktnAppMgtTF.public.jsp")
+        self.drivers[id].get("https://www.dtis.mil.kr/m/mcp/bdngAplMain.page")
         print(f"@openRequestWindow '{id}'- Trying open a reservation page")
     
     def searchforDates(self, dateFrom, dateTo, id):
@@ -117,10 +127,8 @@ class Ticketing():
             None
         """
         print("@searchforDates - Waiting date picker being displayed")
-        self.start_time = time.time()
-        wait(self.drivers[id], 5).until(lambda d: d.find_element(By.ID, "toDt")) #necessary?
-        self.drivers[id].execute_script(f'document.getElementById("fromDt").value = "{dateFrom}";')
-        self.drivers[id].execute_script(f'document.getElementById("toDt").value = "{dateTo}";')
+        wait(self.drivers[id], 5).until(lambda d: d.find_element(By.ID, "fromDtTm"))
+        self.drivers[id].execute_script(f'document.getElementById("fromDtTm").value = "{dateFrom}";')
         self.drivers[id].execute_script("srch();")
         print(f"@searchforDates '{id}' - Set date {dateFrom} and run search")
 
@@ -143,36 +151,35 @@ class Ticketing():
         numofTicket = -1
         try:
             print(f"@searchforTrain '{id}' - Looking for train {numofTrain}")
-            wait(self.drivers[id], 5).until(lambda d: d.find_element(By.CSS_SELECTOR, ("table#request_table > tbody > tr > td > input[name='main_lst_trainnam']")))
-            train_list = self.drivers[id].find_elements(By.CSS_SELECTOR, ("table#request_table > tbody > tr > td > input[name='main_lst_trainnam']"))
+            wait(self.drivers[id], 5).until(lambda d: d.find_element(By.CSS_SELECTOR, ("table#m_table_02 > tbody > tr.m_table_html_tr")))
+            train_list = self.drivers[id].find_elements(By.CSS_SELECTOR, ("table#m_table_02 > tbody > tr.m_table_html_tr > td:nth-child(5)"))
             matching_train_idx = 0
             for i in range(len(train_list)):
-                if train_list[i].get_attribute("value") == numofTrain:
-                    matching_train_idx = i + 1
+                if train_list[i].get_attribute("innerText") == numofTrain:
+                    matching_train_idx = i + 2
                     break
             if not matching_train_idx:
                 print(f"@searchforTrain '{id}' - There is no train {numofTrain}")
                 return numofTicket
             time.sleep(2)
-            isAssigned = wait(self.drivers[id], 5).until(lambda d: d.find_element(By.CSS_SELECTOR, (f"table#request_table > tbody > tr:nth-child({matching_train_idx}) > td:nth-child(3)")))
-            print(isAssigned.get_attribute("innerText"))
+            isAssigned = wait(self.drivers[id], 5).until(lambda d: d.find_element(By.CSS_SELECTOR, (f"table#m_table_02 > tbody > tr:nth-child({matching_train_idx}) > td:nth-child(3)")))
             if isAssigned.get_attribute("innerText") == "2회배정":
                 print(f"@searchforTrain '{id}' - Train was found, but not able to get ticket as you hold two tickets for {numofTrain}")
                 numofTicket = 2
                 return numofTicket
-            elif isAssigned.get_attribute("innerText") == "2회잔여석":
+            elif isAssigned.get_attribute("innerText") == "1회배정":
                 print(f"@searchforTrain '{id}' - Train was found, but you already have a ticket for the train {numofTrain}")
                 numofTicket = 1
             else:
                 print(f"@searchforTrain '{id}' - Train was found {numofTrain}")
                 numofTicket = 0
-            request_button = wait(self.drivers[id], 3).until(lambda d: d.find_element(By.CSS_SELECTOR, (f"table#request_table > tbody > tr:nth-child({matching_train_idx}) > td:nth-child(3) > a")))
-            request_button.click()         
-            if numofTicket == 0:
-                try:
-                    self.drivers[id].find_element(By.ID, "close_btn").click()
-                except:
-                    print(f"@searchforTrain - cannot interact with close_btn")
+            reserve_button = wait(self.drivers[id], 3).until(lambda d: d.find_element(By.CSS_SELECTOR, (f"table#m_table_02 > tbody > tr:nth-child({matching_train_idx}) > td:nth-child(3) > button")))
+            reserve_button.click()         
+            try:
+                wait(self.drivers[id], 3).until(lambda d: d.find_element(By.CSS_SELECTOR, "button.m_btn_005"))
+                self.drivers[id].execute_script("linkPage02();")
+            except:
+                print(f"@searchforTrain - cannot interact with close_btn")
             print(f"@searchforTrain '{id}' - A reservation page was opened for {numofTrain}, id: {id}")
             return numofTicket
         except Exception as e:
@@ -199,12 +206,9 @@ class Ticketing():
             click_condition = []
             # for converting station to int, so find out available interval
             stations_idx = {}
-            # store longest trip available within your depart and destination
-            # in case there is no trip getting on and off at exact station user has specified
-            longest_available_inverval = [-1, -1]
             reserved = ""
             while len(click_condition) < 2:
-                click_condition = self.drivers[id].find_elements(By.CSS_SELECTOR, ("select#rmndr_sstation > option"))
+                click_condition = self.drivers[id].find_elements(By.CSS_SELECTOR, ("select#sstation > option"))
                 time.sleep(0.1)
             
             # parsing station list of this train
@@ -215,40 +219,40 @@ class Ticketing():
                     stations_idx["창원중앙"] = i   
                 if click_condition[i].get_attribute("innerText") == "송정리":
                     stations_idx["광주송정"] = i   
+            print(stations_idx)
             # parsing all seats and find appropriate one
-            seat_list = self.drivers[id].find_elements(By.CSS_SELECTOR, (f"table#popup_table_01 > tbody:nth-child(2) > tr"))
-            for i in range(len(seat_list)):
+            seat_list = []
+            while len(seat_list) < 2:
+                seat_list = self.drivers[id].find_elements(By.CSS_SELECTOR, (f"div.m_sub_table_03 > table#m_table_02 > tbody > tr"))
+                print(len(seat_list))
+                time.sleep(0.3)
+            for i in range(1, len(seat_list)):
                 seat_info = seat_list[i].get_attribute("innerText").split()
-
                 # 전체 구간 티켓 없을때 가장 긴 일부 구간 찾기
-                if stations_idx[seat_info[3][:-1]] > stations_idx[departStation]:
-                    interval = [max(stations_idx[departStation], stations_idx[seat_info[2][:-1]]), min(stations_idx[destStation], stations_idx[seat_info[3][:-1]])]
-                    if interval[1] - interval[0] > longest_available_inverval[1] - longest_available_inverval[0]:
-                        longest_available_inverval = interval
+                # if stations_idx[seat_info[3][:-1]] > stations_idx[departStation]:
+                #     interval = [max(stations_idx[departStation], stations_idx[seat_info[2][:-1]]), min(stations_idx[destStation], stations_idx[seat_info[3][:-1]])]
+                #     if interval[1] - interval[0] > longest_available_inverval[1] - longest_available_inverval[0]:
+                #         longest_available_inverval = interval
 
                 # departStation 에서 승차, destStation 하차하는 자리 있다면 예매
-                if stations_idx[seat_info[2][:-1]] <= stations_idx[departStation] and stations_idx[seat_info[3][:-1]] >= stations_idx[destStation]:
-                    self.drivers[id].execute_script(f"setInfo({i})")
-                    # seat_list[i].click()
+                if stations_idx[seat_info[3][:-1]] <= stations_idx[departStation] and stations_idx[seat_info[4][:-1]] >= stations_idx[destStation]:
+                    self.drivers[id].execute_script(f"setInfo({i - 1})")
 
                     # dropdown 에서 원하는 승하차역으로 변경
-                    # if dropdown is not rendered when setInfo() is called, it leaves the form empty
-                    # so entering information manually to prevent error
-                    depart_dropdown_element = self.drivers[id].find_element(By.ID, ("rmndr_sstation"))
+                    depart_dropdown_element = self.drivers[id].find_element(By.ID, ("sstation"))
                     depart_dropdown = Select(depart_dropdown_element)
                     depart_dropdown.select_by_index(stations_idx[departStation])
-                    destination_dropdown_element = self.drivers[id].find_element(By.ID, ("rmndr_estation"))
+                    destination_dropdown_element = self.drivers[id].find_element(By.ID, ("estation"))
                     destination_dropdown = Select(destination_dropdown_element)
                     destination_dropdown.select_by_index(stations_idx[destStation])
 
-                    self.drivers[id].execute_script("rmndrSeatRsvtn();")
-                    self.end_time = time.time()
+                    self.drivers[id].execute_script("seatRsvtn();")
                     reserved = f"{departStation}-{destStation}"
                     # 알림창: 신청하시겠습니까?
                     alert = self.drivers[id].switch_to.alert
                     alert.accept()
 
-                    self.openRequestWindow(id)
+                    
                     try:
                         time.sleep(1)
                         alert = self.drivers[id].switch_to.alert
@@ -259,6 +263,7 @@ class Ticketing():
                     #message = f"잔여석 예약 확정 정보\n{date[5:]}, {numofTrain}\n{result}\n{id}"
                     message = f"잔여석 예약 확정 정보\n{departStation}-{destStation}\n{id}"
                     messaging_response = self.notifier.send_sms("01084456318", message)
+                    self.openRequestWindow(id)
                     break
             if not reserved:
                 # time.sleep(2)
@@ -316,30 +321,27 @@ class Ticketing():
     def displayTicketStatus(self, id):
         print(f"@displayTicketStatus - Try open ticket state page for id: {id}")
         try:
-            self.drivers[id].get("http://dtis.mil.kr/internet/dtis_rail/milTrnTicktPrnt.public.jsp")
+            self.drivers[id].get("https://www.dtis.mil.kr/m/mcp/aplRsltCnclMain.page")
         except Exception as e:
             print(f"@displayTicketStatus - Error while open state page, retry login id: {id}")
             print(e)
             self.login(id, self.passwords[id])
-            self.drivers[id].get("http://dtis.mil.kr/internet/dtis_rail/milTrnTicktPrnt.public.jsp")
+            self.drivers[id].get("https://www.dtis.mil.kr/m/mcp/aplRsltCnclMain.page")
         ticket_info = []
         try:
-            ticket_list = self.drivers[id].find_elements(By.CSS_SELECTOR, "table#request_table > tbody > tr")
+            self.drivers[id].execute_script("srch();")
+            ticket_list = wait(self.drivers[id], 2).until(lambda d:d.find_elements(By.CSS_SELECTOR, "table#request_table > tbody > tr.m_table_html_tr"))
+            #ticket_list = self.drivers[id].find_elements(By.CSS_SELECTOR, "table#request_table > tbody > tr.m_table_html_tr")
             for i in ticket_list:
+                # 날짜, 신청여부, 출발역, 도착역, 열차번호, 승차권출력
                 cols = i.get_attribute("innerText").split("\t")
-                cur_ticket = []
-                # 호차, 좌석, 배정여부, 날짜, 열차번호, 승차역, 하차역
-                col_array = [1, 2, 3, 4, 5, 15, 16]
-                for i in col_array:
-                    cur_ticket.append(cols[i])
-                # 군번
-                cur_ticket.append(cols[12])
-                ticket_info.append(cur_ticket)
-            ticket_info.sort(key=lambda lst: lst[3])
+                cur = [cols[0], cols[2], cols[3], cols[4], cols[5]]
+                ticket_info.append(cur)
+            ticket_info.sort(key=lambda lst: lst[0])
         except Exception as e:
             print(f"@displayTicketStatus - Error while parsing tickets, it seems you don't have any tickets - {id}")
             print(e)
-        return ticket_info[:-1]
+        return ticket_info if ticket_info else ["None"]
 
     # 현재 신청 ,확정된 승차권 정보 ../static/tickets.txt 에 저장.
     # 첫줄 시간정보, 이후 한줄씩 티켓 정보
@@ -397,3 +399,8 @@ class Ticketing():
         self.drivers.clear()
         print(self.drivers)
         return str(self.drivers)
+
+if __name__ == "__main__":
+    import Notification
+    runner = Ticketing()
+    runner.login("test", config.TMO_ID, config.TMO_PASSWORD)
