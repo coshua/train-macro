@@ -51,6 +51,10 @@ def set_macro(update: Update, context):
     res = sc.setup_ticketing(app.findSeatRecursively, (context.args[:5]), int(context.args[5]), next_run_time, context.args[6])
     context.bot.send_message(chat_id=update.effective_chat.id, text=res)
 
+def cancel_ticket(update: Update, context):
+    res = app.cancelTicket(*context.args)
+    context.bot.send_message(chat_id=update.effective_chat.id, text=res) 
+
 def kill_macro(update: Update, context):
     res = sc.kill_scheduler(context.args[0])
     context.bot.send_message(chat_id=update.effective_chat.id, text=res) 
@@ -75,6 +79,7 @@ def kill_drivers(update: Update, context):
 
 dispatcher.add_handler(CommandHandler('login', login))
 dispatcher.add_handler(CommandHandler('set', set_macro))
+dispatcher.add_handler(CommandHandler('cancel', cancel_ticket))
 dispatcher.add_handler(CommandHandler('loginrun', login_and_run))
 dispatcher.add_handler(CommandHandler('kill', kill_macro))
 dispatcher.add_handler(CommandHandler('tickets', get_ticketinfo))

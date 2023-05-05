@@ -5,6 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import UnexpectedAlertPresentException
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
 from telegram import Update, Bot
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 import time
@@ -174,7 +175,9 @@ class Ticketing():
                 print(f"@searchforTrain '{id}' - Train was found {numofTrain}")
                 numofTicket = 0
             reserve_button = wait(self.drivers[id], 3).until(lambda d: d.find_element(By.CSS_SELECTOR, (f"table#m_table_02 > tbody > tr:nth-child({matching_train_idx}) > td:nth-child(3) > button")))
-            reserve_button.click()         
+            #reserve_button.click()       
+            self.drivers[id].execute_script("lst=document.getElementsByClassName(\"m_btn_106\");")
+            self.drivers[id].execute_script(f"lst[{i}].click();")  
             try:
                 wait(self.drivers[id], 3).until(lambda d: d.find_element(By.CSS_SELECTOR, "button.m_btn_005"))
                 self.drivers[id].execute_script("linkPage02();")
@@ -224,7 +227,7 @@ class Ticketing():
             seat_list = []
             while len(seat_list) < 2:
                 seat_list = self.drivers[id].find_elements(By.CSS_SELECTOR, (f"div.m_sub_table_03 > table#m_table_02 > tbody > tr"))
-                print(len(seat_list))
+                print("number of seats", len(seat_list))
                 time.sleep(0.3)
             for i in range(1, len(seat_list)):
                 seat_info = seat_list[i].get_attribute("innerText").split()
@@ -285,7 +288,7 @@ class Ticketing():
 
     # fix
     # 취소표에서 구간은 처음과 끝으로 보이고 이후의 창에서 세부 구간 취소해야함
-    def cancelTicket(self, operationDate, numofTrain, departStation, destStation, id):
+    def cancelTicket(self, operationDate, numofTrain, id):
         """
         It tries to drop off the ticket with given information.
 
@@ -300,20 +303,28 @@ class Ticketing():
             (bool) : True if there was a ticket matching the given information and successfully dropped it off.
             False if it fails to find such ticket.
         """
-        print(f"@cancelTicket - Try cancel the ticket {numofTrain}, {departStation}-{destStation} on {operationDate}")
-        self.drivers[id].get("http://dtis.mil.kr/internet/dtis_rail/milTrnBdngCancel.public.jsp")
-        future_date = datetime.now() + timedelta(days=10)
-        future_date = future_date.strftime('%Y-%m-%d')
-        self.drivers[id].execute_script(f'document.getElementById("toDt").value = "{future_date}";')
+        print(f"@cancelTicket - Try cancel the ticket {numofTrain} on {operationDate}")
+        self.drivers[id].get("https://www.dtis.mil.kr/m/mcp/aplRsltCnclMain.page")
+        # future_date = datetime.now() + timedelta(days=10)
+        # future_date = future_date.strftime('%Y-%m-%d')
+        # self.drivers[id].execute_script(f'document.getElementById("toDt").value = "{future_date}";')
         self.drivers[id].execute_script("srch();")
-        tickets_list = wait(self.drivers[id], 5).until(lambda d: d.find_elements(By.CSS_SELECTOR, ("table#request_table > tbody > tr")))
+        tickets_list = wait(self.drivers[id], 5).until(lambda d: d.find_elements(By.CSS_SELECTOR, ("table#request_table > tbody > tr.m_table_html_tr")))
+        print(len(tickets_list))
         for i in range(len(tickets_list)):
-            # 2, 5, 7, 8
-            # 날짜, 열차명, 출발역, 도착역
+            # 0, 4
+            # 날짜, 열차번호
             cols = tickets_list[i].get_attribute("innerText").split("\t")
-            if cols[2] == operationDate and cols[5] == numofTrain \
-            and cols[7] == departStation and cols[8] == destStation:
-                self.drivers[id].find_element(By.CSS_SELECTOR, f"table#request_table > tbody > tr:nth-child({i + 1}) > td:nth-child(2) > a").click()
+            if cols[0] == operationDate and cols[4] == numofTrain:
+                self.drivers[id].execute_script(f"alocCancel({i});")
+                try:
+                    alert = self.drivers[id].switch_to.alert
+                    alert.accept()
+                    time.sleep(1)
+                    alert = self.drivers[id].switch_to.alert
+                    alert.accept()
+                except Exception:
+                    print(f"cancelTicket - unexpected error while canceling ticket")
                 return True
         return False
 
