@@ -98,6 +98,7 @@ class Ticketing():
             # category_element = wait(self.drivers[driver_name], 2).until(lambda d: d.find_element(By.ID, "military"))
             #loginarea = wait(driver, 5).until(EC.element_to_be_clickable((By.ID, "mainframe.VFrameSet.frameLogin.form.divLogin.form.edtID:input")))
             IDarea = driver.find_element(By.ID, "sId")
+            IDarea.clear()  
             IDarea.send_keys(id)
             #driver.execute_script(f'document.getElementById("mainframe.VFrameSet.frameLogin.form.divLogin.form.edtID:input").value = "{id}";')
             PWarea = driver.find_element(By.ID, "sPw")
