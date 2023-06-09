@@ -95,7 +95,6 @@ class Ticketing():
             print(f"@login - Trying login to system for user {id}")
             train = wait(driver, 5).until(lambda d: d.find_element(By.ID, "military"))
             driver.execute_script(f'document.getElementById("military").value = 5;')
-            # category_element = wait(self.drivers[driver_name], 2).until(lambda d: d.find_element(By.ID, "military"))
             #loginarea = wait(driver, 5).until(EC.element_to_be_clickable((By.ID, "mainframe.VFrameSet.frameLogin.form.divLogin.form.edtID:input")))
             IDarea = driver.find_element(By.ID, "sId")
             IDarea.clear()  
